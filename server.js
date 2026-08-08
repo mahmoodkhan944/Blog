@@ -10,10 +10,10 @@ const app = express();
 const FIREBASE_PROJECT_ID = "blogging-website-12a92";
 
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 app.use(
   fileUpload({
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per image
+    limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max per image
     abortOnLimit: true
   })
 );

@@ -113,6 +113,16 @@ markdown-style editor, and manage your own posts from a dashboard.
   Cloudinary account's values, or uploads will fail — see the comment
   above those constants for exactly where to find/create them.
 
+- **Likes and comments.** Any visitor can like/unlike a post (no login
+  needed — tracked per-browser via `localStorage`, counter lives in the
+  post's `likes` field). Commenting requires being signed in, and people
+  can delete their own comments (admins can delete any comment). This
+  needed a change to `firestore.rules`: the blog document's `update` rule
+  now has a `isCounterOnlyChange()` exception so **any** visitor can bump
+  `likes`/`views`, while every other field stays locked to the post's
+  author/admin — and there's a new `comments` subcollection rule block.
+  **Re-apply `firestore.rules`** in Firebase Console for this to work.
+
 ## Project structure
 
 ```

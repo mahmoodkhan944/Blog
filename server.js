@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use(
   fileUpload({
-    limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max per image
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max per image
     abortOnLimit: true
   })
 );
@@ -182,4 +182,12 @@ app.get("/:id", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+// Only bind to a port when run directly (`node server.js`, local dev).
+// On Vercel, this file is imported as a serverless function instead —
+// module.exports below is what actually gets used there.
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+module.exports = app;

@@ -138,6 +138,27 @@ npm start
 
 The server runs on `http://localhost:3000`.
 
+## Deploying to Vercel
+
+`vercel.json` routes every request through `server.js` (as a serverless
+function) instead of letting Vercel serve `public/` as plain static
+files — this is required for the Open Graph share-preview injection
+above to actually run. After adding `vercel.json`, just push to your
+connected Git repo and Vercel will redeploy automatically.
+
+**⚠️ Known limitation — image uploads won't work on Vercel as-is.**
+`/api/upload` currently saves files to disk (`public/uploads/`) via
+`file.mv()`. Vercel's serverless functions have a **read-only
+filesystem** (except `/tmp`, which is wiped after each request) — so any
+attempt to upload a banner or article image will fail with a server
+error once deployed there, even though it works fine locally or on a
+traditional host (Render, Railway, a VPS, etc.).
+
+The proper fix is to upload images to **Firebase Storage** instead of
+local disk, since the app already uses Firebase for everything else.
+That's a real change to `/api/upload` and `public/js/api.js` — ask if
+you'd like it done.
+
 ## Note on Firebase config
 
 `js/firebase.js` still contains the original project's Firebase web config

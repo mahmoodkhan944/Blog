@@ -2,7 +2,6 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
-const fileUpload = require("express-fileupload");
 
 const app = express();
 
@@ -11,48 +10,8 @@ const FIREBASE_PROJECT_ID = "blogging-website-12a92";
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  fileUpload({
-    limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max per image
-    abortOnLimit: true
-  })
-);
 
-// ===== UPLOAD API =====
-app.post("/api/upload", async (req, res) => {
-  try {
-    if (!req.files?.image) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
 
-    const file = req.files.image;
-
-    if (!file.mimetype.startsWith("image/")) {
-      return res.status(400).json({ error: "Only image files are allowed" });
-    }
-
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const name = `${Date.now()}-${safeName}`;
-    const uploadPath = path.join(__dirname, "public/uploads", name);
-
-    await file.mv(uploadPath);
-
-    res.json({ url: `/uploads/${name}` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Upload failed" });
-  }
-});
-
-// ===== SHARE PREVIEWS (Open Graph / Twitter Card meta tags) =====
-// Apps like WhatsApp, Facebook, and Twitter/X read link previews by
-// fetching the raw HTML — they do NOT run JavaScript. Since blog content
-// normally loads client-side from Firestore, we fetch it here on the
-// server and inject the right <meta> tags before sending the page, so
-// share previews show the actual blog banner/title instead of nothing.
-
-// Reads a public Firestore document over its REST API (no credentials
-// needed since our security rules already allow public reads on /blogs).
 function fetchBlogDoc(id) {
   return new Promise(resolve => {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/blogs/${encodeURIComponent(id)}`;
@@ -74,8 +33,7 @@ function fetchBlogDoc(id) {
   });
 }
 
-// Firestore's REST API wraps every field like { stringValue: "..." } —
-// unwrap the ones we actually need for meta tags.
+
 function parseFirestoreFields(fields) {
   const data = {};
   for (const key in fields) {
@@ -95,8 +53,7 @@ function escapeAttr(str) {
   return String(str || "").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
-// Inserts Open Graph / Twitter Card tags into an HTML string's <head>,
-// and overwrites <title> if a title is given.
+
 function injectMetaTags(html, { title, description, image, url }) {
   const tags = `
     <meta name="description" content="${escapeAttr(description)}">
@@ -126,10 +83,7 @@ function absoluteUrl(req, maybeRelativePath) {
   return maybeRelativePath.startsWith("/") ? `${base}${maybeRelativePath}` : maybeRelativePath;
 }
 
-// ===== PAGES (explicit routes first, catch-all last) =====
 
-// Homepage — static content, but the preview image/title still need to
-// be absolute URLs based on whatever domain is actually serving the site.
 app.get("/", (req, res) => {
   try {
     const html = fs.readFileSync(path.join(__dirname, "public/home.html"), "utf-8");
@@ -154,9 +108,7 @@ app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public/da
 app.get("/editor", (req, res) => res.sendFile(path.join(__dirname, "public/editor.html")));
 app.get("/blogs", (req, res) => res.sendFile(path.join(__dirname, "public/blogs.html")));
 
-// Any other path is treated as a blog post slug — fetch that post's
-// title/banner/excerpt from Firestore and inject them as share preview
-// meta tags before sending the page.
+
 app.get("/:id", async (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, "public/blog.html"), "utf-8");
 
@@ -183,9 +135,7 @@ app.get("/:id", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Only bind to a port when run directly (`node server.js`, local dev).
-// On Vercel, this file is imported as a serverless function instead —
-// module.exports below is what actually gets used there.
+
 if (require.main === module) {
   app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }

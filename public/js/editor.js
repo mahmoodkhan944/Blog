@@ -152,7 +152,7 @@ async function handleBannerUpload() {
     bannerPath = url;
   } catch (err) {
     console.error(err);
-    alert("Banner upload failed. Please try again.");
+    alert(err.message || "Banner upload failed. Please try again.");
   }
 }
 
@@ -172,7 +172,7 @@ async function handleArticleImageUpload() {
     insertImage(url, file.name);
   } catch (err) {
     console.error(err);
-    alert("Image upload failed. Please try again.");
+    alert(err.message || "Image upload failed. Please try again.");
   }
 }
 

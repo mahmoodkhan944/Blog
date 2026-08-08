@@ -13,3 +13,19 @@ const ADMIN_EMAILS = [
 function isAdmin(user) {
   return !!user && !!user.email && ADMIN_EMAILS.includes(user.email);
 }
+
+// ===== IMAGE UPLOAD CONFIG (Cloudinary) =====
+// Used by uploadFile() in api.js for banner/article image uploads.
+// Both values come from your own Cloudinary account:
+//
+//   1. CLOUD_NAME  — shown at the top of your Cloudinary dashboard
+//      (console.cloudinary.com), labeled "Cloud name".
+//
+//   2. UPLOAD_PRESET — Settings (gear icon) → Upload → scroll to
+//      "Upload presets" → Add upload preset → set "Signing Mode" to
+//      "Unsigned" → Save. Copy the preset's name here.
+//      (Unsigned presets are the standard way to let a browser upload
+//      directly to Cloudinary without exposing your API secret.)
+
+const CLOUDINARY_CLOUD_NAME = "dmnch701b";
+const CLOUDINARY_UPLOAD_PRESET = "ml_default";

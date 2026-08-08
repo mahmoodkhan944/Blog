@@ -103,6 +103,16 @@ markdown-style editor, and manage your own posts from a dashboard.
     (`renderArticle()` legacy parser). Editing an old post loads it as
     plain text; saving it again upgrades it to the new HTML format.
 
+- **Image uploads go straight to Cloudinary**, uploaded directly from
+  the browser (`uploadFile()` in `public/js/api.js`) using an unsigned
+  upload preset — they never pass through our own server. This replaced
+  the old `/api/upload` endpoint, which saved files to local disk and
+  therefore couldn't work on serverless hosts like Vercel (read-only
+  filesystem). **You must set `CLOUDINARY_CLOUD_NAME` and
+  `CLOUDINARY_UPLOAD_PRESET`** in `public/js/config.js` with your own
+  Cloudinary account's values, or uploads will fail — see the comment
+  above those constants for exactly where to find/create them.
+
 ## Project structure
 
 ```
@@ -118,13 +128,18 @@ public/
   js/
     firebase.js     Firebase init, exposes `db` and `auth`
     auth.js         signup/login/logout/requireAuth helpers
-    api.js          uploadFile() -> POST /api/upload
+    config.js       admin emails + Cloudinary credentials
+    api.js          uploadFile() -> uploads directly to Cloudinary
     nav.js          shared, auth-aware navbar component
-    home.js / blog.js / editor.js / login.js / dashboard.js
-  home.html / blog.html / editor.html / login.html / dashboard.html
-  img/, uploads/
+    blog-cards.js   shared card/featured-card rendering + recency sort
+    home.js / blog.js / blogs.js / editor.js / login.js / dashboard.js
+  home.html / blog.html / blogs.html / editor.html / login.html / dashboard.html
+  img/, uploads/    legacy local uploads from before the Cloudinary
+                    switch — new uploads go to Cloudinary, not this folder
 server.js
 package.json
+firestore.rules    Firestore security rules (posts)
+vercel.json         Vercel deployment config
 ```
 
 ## Running locally
@@ -141,28 +156,22 @@ The server runs on `http://localhost:3000`.
 ## Deploying to Vercel
 
 `vercel.json` routes every request through `server.js` (as a serverless
-function) instead of letting Vercel serve `public/` as plain static
-files — this is required for the Open Graph share-preview injection
-above to actually run. After adding `vercel.json`, just push to your
-connected Git repo and Vercel will redeploy automatically.
+function, via `includeFiles` so the `public/` folder is bundled with it)
+instead of letting Vercel serve `public/` as plain static files — this is
+required for the Open Graph share-preview injection above to actually
+run. After adding `vercel.json`, just push to your connected Git repo and
+Vercel will redeploy automatically.
 
-**⚠️ Known limitation — image uploads won't work on Vercel as-is.**
-`/api/upload` currently saves files to disk (`public/uploads/`) via
-`file.mv()`. Vercel's serverless functions have a **read-only
-filesystem** (except `/tmp`, which is wiped after each request) — so any
-attempt to upload a banner or article image will fail with a server
-error once deployed there, even though it works fine locally or on a
-traditional host (Render, Railway, a VPS, etc.).
-
-The proper fix is to upload images to **Firebase Storage** instead of
-local disk, since the app already uses Firebase for everything else.
-That's a real change to `/api/upload` and `public/js/api.js` — ask if
-you'd like it done.
+Since image uploads go straight from the browser to Cloudinary (see
+above) rather than through the server, they work the same way on Vercel
+as they do locally — no serverless filesystem limitations to worry about.
 
 ## Note on Firebase config
 
 `js/firebase.js` still contains the original project's Firebase web config
 (API key, project ID, etc.). Firebase web config values are meant to be
-public/client-side, but access should be locked down with **Firestore
-security rules** (e.g. only signed-in users can write to `blogs`) — this
-wasn't part of the codebase and is worth adding separately.
+public/client-side, but write access should still be locked down with
+**`firestore.rules`** (who can create/edit/delete blog posts). That file
+must be applied in Firebase Console → Firestore Database → Rules for the
+protection to actually take effect — having it in this repo alone does
+nothing until you paste it in and hit Publish.

@@ -51,11 +51,32 @@ markdown-style editor, and manage your own posts from a dashboard.
   becomes unmanageable — add/replace it with whichever account(s) should
   be admin.
 
-  **One-time setup note**: the dashboard query combines `where()` and
-  `orderBy()` on different fields, which needs a Firestore composite
-  index. The first time it runs, Firestore will log an error in the
-  browser console with a direct link to auto-create that index — just
-  click it once.
+- **Correct chronological ordering.** Posts used to be sorted with
+  Firestore's `orderBy("publishedAt", "desc")` — but `publishedAt` is just
+  a display string (e.g. `"8/8/2026"`) with no time component, so two
+  posts published on the same day could come back in the wrong order.
+  Sorting now happens client-side (`sortDocsByRecency()` in
+  `js/blog-cards.js`) using a real Firestore server timestamp
+  (`createdAt`), with a parsed-string fallback for posts that predate
+  this field. Because of this, none of the list pages use `orderBy()`
+  anymore — which also means the dashboard's `where()` query no longer
+  needs a Firestore composite index.
+
+- **Link share previews (Open Graph tags).** Apps like WhatsApp,
+  Facebook, and Twitter/X read link previews by fetching raw HTML — they
+  never run JavaScript. Since blog content normally loads client-side
+  from Firestore, `server.js` now fetches a post's title/banner/excerpt
+  from Firestore's REST API on the server and injects `<meta
+  property="og:...">` / `<meta name="twitter:...">` tags before sending
+  the page, so sharing a blog link shows that post's actual banner image,
+  and sharing the homepage shows the site's header image. See
+  `injectMetaTags()` / `fetchBlogDoc()` in `server.js`.
+  - `FIREBASE_PROJECT_ID` at the top of `server.js` must match
+    `firebaseConfig.projectId` in `public/js/firebase.js`.
+  - Platforms cache link previews aggressively. If you're testing and a
+    stale preview keeps showing up, use [Facebook's Sharing
+    Debugger](https://developers.facebook.com/tools/debug/) to force a
+    re-scrape, or share a link with a dummy query string appended.
 
 **Redesign**
 - New warm, editorial visual system: `Playfair Display` for headings +

@@ -220,6 +220,59 @@ function sendEmail({ to, bcc, subject, html }) {
   });
 }
 
+// ===== POST SCHEDULING =====
+// Vercel Cron (see vercel.json "crons") hits this on a schedule and
+// flips any "scheduled" post whose time has arrived over to
+// "published". Needs FIREBASE_SERVICE_ACCOUNT_KEY (same as the
+// newsletter) since it writes to Firestore directly, bypassing the
+// normal client security rules.
+//
+// If CRON_SECRET is set as an env var, only requests carrying that
+// exact bearer token are accepted — Vercel Cron sends this
+// automatically once you add CRON_SECRET in Project Settings →
+// Environment Variables. Without it, this endpoint still works (Vercel
+// Cron just won't authenticate itself), it's only there to stop
+// strangers from spamming the endpoint.
+app.get("/api/publish-scheduled", async (req, res) => {
+  if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const adminInstance = getAdminApp();
+  if (!adminInstance) {
+    return res.json({ published: 0, reason: "Admin SDK not configured." });
+  }
+
+  try {
+    const now = admin.firestore.Timestamp.now();
+    const snap = await adminInstance
+      .firestore()
+      .collection("blogs")
+      .where("status", "==", "scheduled")
+      .where("scheduledFor", "<=", now)
+      .get();
+
+    if (snap.empty) {
+      return res.json({ published: 0 });
+    }
+
+    const batch = adminInstance.firestore().batch();
+    const publishedIds = [];
+
+    snap.docs.forEach(doc => {
+      batch.update(doc.ref, { status: "published" });
+      publishedIds.push(doc.id);
+    });
+
+    await batch.commit();
+
+    res.json({ published: publishedIds.length, ids: publishedIds });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not publish scheduled posts" });
+  }
+});
+
 // Called right after a post goes live (see public/js/editor.js).
 // Re-fetches the post itself server-side rather than trusting whatever
 // the client sends, so the email content can't be spoofed through this
@@ -355,6 +408,7 @@ app.get("/blogs", (req, res) => res.sendFile(path.join(__dirname, "public/blogs.
 app.get("/author/:uid", (req, res) => res.sendFile(path.join(__dirname, "public/author.html")));
 app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public/about.html")));
 app.get("/contact", (req, res) => res.sendFile(path.join(__dirname, "public/contact.html")));
+app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public/settings.html")));
 
 app.get("/robots.txt", (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;

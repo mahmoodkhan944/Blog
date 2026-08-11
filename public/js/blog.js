@@ -21,9 +21,10 @@ db.collection("blogs").doc(blogId).get()
     const data = doc.data();
     postAuthorId = data.authorId || null;
 
-    // Drafts are only visible to their author or an admin — everyone
-    // else is redirected away, same as a post that doesn't exist.
-    if (data.status === "draft") {
+    // Drafts and not-yet-live scheduled posts are only visible to their
+    // author or an admin — everyone else is redirected away, same as a
+    // post that doesn't exist.
+    if (data.status === "draft" || data.status === "scheduled") {
       const user = await new Promise(resolve => {
         const unsub = auth.onAuthStateChanged(u => { unsub(); resolve(u); });
       });
@@ -37,6 +38,17 @@ db.collection("blogs").doc(blogId).get()
     // ===== SET TITLE =====
     titleEl.innerText = data.title;
     document.title = `Blog : ${data.title}`;
+
+    // ===== BREADCRUMBS =====
+    const breadcrumbsEl = document.getElementById("breadcrumbs");
+    if (breadcrumbsEl) {
+      const parts = [`<a href="/">Home</a>`];
+      if (data.category) {
+        parts.push(`<a href="/blogs?category=${encodeURIComponent(data.category)}">${escapeHtml(data.category)}</a>`);
+      }
+      parts.push(`<span aria-current="page">${escapeHtml(data.title.length > 40 ? data.title.slice(0, 40) + "…" : data.title)}</span>`);
+      breadcrumbsEl.innerHTML = parts.join(`<span class="crumb-sep">/</span>`);
+    }
 
     // ===== TEXT DIRECTION (RTL support for Urdu/Arabic/etc.) =====
     const dir = data.direction || detectTextDirection(data.title + " " + getArticlePlainText(data));
@@ -73,7 +85,7 @@ db.collection("blogs").doc(blogId).get()
     // ===== RENDER ARTICLE =====
     if (data.contentFormat === "html") {
       articleEl.innerHTML = DOMPurify.sanitize(data.article || "", {
-        ALLOWED_TAGS: ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote"],
+        ALLOWED_TAGS: ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote", "table", "thead", "tbody", "tr", "th", "td"],
         ALLOWED_ATTR: ["src", "alt", "class", "href", "target", "rel"]
       });
     } else {

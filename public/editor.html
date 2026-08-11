@@ -38,9 +38,16 @@
             <input type="text" class="title" placeholder="Enter blog title..." />
             <div class="actions">
                 <select class="category-select" id="categorySelect" title="Category" aria-label="Category"></select>
+                <button type="button" class="btn small ghost" id="scheduleToggle" title="Schedule for later">🕒 Schedule</button>
                 <button class="draft-btn btn ghost">Save Draft</button>
-                <button class="publish-btn btn accent">Publish</button>
+                <button class="publish-btn btn accent" title="Ctrl+S">Publish</button>
             </div>
+        </div>
+
+        <div class="schedule-panel" id="schedulePanel" style="display:none">
+            <label for="scheduleInput">Publish automatically at:</label>
+            <input type="datetime-local" id="scheduleInput">
+            <button type="button" class="btn small ghost" id="scheduleCancel">Cancel</button>
         </div>
 
         <div class="autosave-banner" id="autosaveBanner" style="display:none"></div>
@@ -65,10 +72,10 @@
             <button onmousedown="event.preventDefault()" onclick="addHeading()" title="Heading" aria-label="Heading">
                 <i class="fa-solid fa-heading"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addBold()" title="Bold" aria-label="Bold">
+            <button onmousedown="event.preventDefault()" onclick="addBold()" title="Bold (Ctrl+B)" aria-label="Bold">
                 <i class="fa-solid fa-bold"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addItalic()" title="Italic" aria-label="Italic">
+            <button onmousedown="event.preventDefault()" onclick="addItalic()" title="Italic (Ctrl+I)" aria-label="Italic">
                 <i class="fa-solid fa-italic"></i>
             </button>
             <button onmousedown="event.preventDefault()" onclick="addList()" title="Bullet list" aria-label="Bullet list">
@@ -77,8 +84,11 @@
             <button onmousedown="event.preventDefault()" onclick="addBlockquote()" title="Quote" aria-label="Quote">
                 <i class="fa-solid fa-quote-left"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addLink()" title="Insert link" aria-label="Insert link">
+            <button onmousedown="event.preventDefault()" onclick="addLink()" title="Insert link (Ctrl+K)" aria-label="Insert link">
                 <i class="fa-solid fa-link"></i>
+            </button>
+            <button onmousedown="event.preventDefault()" onclick="addTable()" title="Insert table" aria-label="Insert table">
+                <i class="fa-solid fa-table"></i>
             </button>
             <button onmousedown="event.preventDefault()" onclick="clearFormat()" title="Clear formatting" aria-label="Clear formatting">
                 <i class="fa-solid fa-eraser"></i>

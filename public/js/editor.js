@@ -3,7 +3,7 @@ requireAuth();
 
 // Tags/attributes allowed in saved article HTML — kept tight since this
 // content is rendered to every visitor of the blog.
-const ARTICLE_ALLOWED_TAGS = ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote"];
+const ARTICLE_ALLOWED_TAGS = ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote", "table", "thead", "tbody", "tr", "th", "td"];
 const ARTICLE_ALLOWED_ATTR = ["src", "alt", "class", "href", "target", "rel"];
 
 let bannerPath = "";
@@ -53,6 +53,18 @@ async function init() {
 
   document.querySelector(".publish-btn").addEventListener("click", () => save("published"));
   document.querySelector(".draft-btn").addEventListener("click", () => save("draft"));
+
+  document.querySelector("#scheduleToggle").addEventListener("click", () => {
+    const panel = document.querySelector("#schedulePanel");
+    panel.style.display = panel.style.display === "none" ? "flex" : "none";
+  });
+  document.querySelector("#scheduleCancel").addEventListener("click", () => {
+    document.querySelector("#schedulePanel").style.display = "none";
+    document.querySelector("#scheduleInput").value = "";
+  });
+
+  document.querySelector(".article").addEventListener("keydown", handleShortcuts);
+  document.addEventListener("keydown", handleGlobalShortcuts);
 
   const bannerUpload = document.querySelector("#banner-upload");
   if (bannerUpload) bannerUpload.addEventListener("change", handleBannerUpload);
@@ -392,6 +404,28 @@ function addLink() {
   }
 }
 
+function addTable() {
+  const rows = parseInt(prompt("How many rows? (including header)", "3"), 10);
+  const cols = parseInt(prompt("How many columns?", "3"), 10);
+
+  if (!rows || !cols || rows < 1 || cols < 1 || rows > 20 || cols > 10) {
+    toast("Please enter a valid row/column count.", "error");
+    return;
+  }
+
+  let html = "<table><thead><tr>";
+  for (let c = 0; c < cols; c++) html += `<th>Header ${c + 1}</th>`;
+  html += "</tr></thead><tbody>";
+  for (let r = 1; r < rows; r++) {
+    html += "<tr>";
+    for (let c = 0; c < cols; c++) html += "<td>&nbsp;</td>";
+    html += "</tr>";
+  }
+  html += "</tbody></table><p><br></p>";
+
+  document.execCommand("insertHTML", false, html);
+}
+
 function clearFormat() {
   document.execCommand("removeFormat");
   document.execCommand("formatBlock", false, "<p>");
@@ -406,7 +440,36 @@ window.addItalic = addItalic;
 window.addList = addList;
 window.addBlockquote = addBlockquote;
 window.addLink = addLink;
+window.addTable = addTable;
 window.clearFormat = clearFormat;
+
+// ===== KEYBOARD SHORTCUTS =====
+// Ctrl/Cmd+B/I/K work naturally inside the contenteditable article
+// (Bold/Italic are native browser behavior; Link needs our own handler
+// since there's no built-in shortcut for it). Ctrl/Cmd+S works from
+// anywhere on the page to save, since that's a "the whole document"
+// action rather than a text-formatting one.
+function handleShortcuts(e) {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+
+  if (e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    addLink();
+  }
+  // Bold (Ctrl+B) and Italic (Ctrl+I) are handled natively by the
+  // browser inside contenteditable — no code needed for those.
+}
+
+function handleGlobalShortcuts(e) {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+
+  if (e.key.toLowerCase() === "s") {
+    e.preventDefault();
+    save("published");
+  }
+}
 
 // ===== SAVE (Publish or Save Draft) =====
 async function save(status) {
@@ -417,9 +480,21 @@ async function save(status) {
   const publishBtn = document.querySelector(".publish-btn");
   const draftBtn = document.querySelector(".draft-btn");
 
+  // If a schedule time is set, "Publish" actually means "schedule for
+  // later" instead of going live immediately.
+  const scheduleInput = document.querySelector("#scheduleInput");
+  const scheduledFor = scheduleInput && scheduleInput.value ? new Date(scheduleInput.value) : null;
+
+  if (status === "published" && scheduledFor) {
+    if (scheduledFor.getTime() <= Date.now()) {
+      return toast("Scheduled time must be in the future.", "error");
+    }
+    status = "scheduled";
+  }
+
   // Drafts can be saved with less complete content — full validation
-  // only applies when actually publishing.
-  if (status === "published") {
+  // only applies when actually publishing (immediately or scheduled).
+  if (status === "published" || status === "scheduled") {
     if (!title || title.length < 5) return toast("Title too short", "error");
     if (!articleText || articleText.length < 20) return toast("Write proper content", "error");
     if (!bannerPath) return toast("Upload a banner image", "error");
@@ -446,6 +521,10 @@ async function save(status) {
     // re-guess it every time.
     direction: articleField.getAttribute("dir") || detectTextDirection(title + " " + articleText)
   };
+
+  if (status === "scheduled") {
+    payload.scheduledFor = firebase.firestore.Timestamp.fromDate(scheduledFor);
+  }
 
   // Only stamp author + publish date/time when a post is first created —
   // never on update, so editing a post doesn't change its original
@@ -480,7 +559,7 @@ async function save(status) {
   draftBtn.disabled = true;
   const clickedBtn = status === "draft" ? draftBtn : publishBtn;
   const originalLabel = clickedBtn.textContent;
-  clickedBtn.textContent = status === "draft" ? "Saving..." : (editId ? "Updating..." : "Publishing...");
+  clickedBtn.textContent = status === "draft" ? "Saving..." : (status === "scheduled" ? "Scheduling..." : (editId ? "Updating..." : "Publishing..."));
 
   try {
     await db.collection("blogs").doc(id).set(payload, { merge: true });
@@ -499,6 +578,9 @@ async function save(status) {
     if (status === "draft") {
       toast("Saved as draft 📝", "success");
       setTimeout(() => (location.href = "/dashboard"), 600);
+    } else if (status === "scheduled") {
+      toast(`Scheduled for ${scheduledFor.toLocaleString()} 🕒`, "success");
+      setTimeout(() => (location.href = "/dashboard"), 800);
     } else {
       toast(editId ? "Updated ✅" : "Published ✅", "success");
       setTimeout(() => (location.href = "/" + id), 600);

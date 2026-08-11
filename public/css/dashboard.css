@@ -28,6 +28,12 @@
   margin-top: var(--space-1);
 }
 
+.dashboard-header-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
 /* ===== Section grouping ===== */
 .dash-section {
   margin-bottom: var(--space-8);
@@ -192,6 +198,18 @@
   display: inline-block;
   background: var(--danger-soft);
   color: var(--danger);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.scheduled-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;

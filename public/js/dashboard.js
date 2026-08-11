@@ -51,7 +51,7 @@ function renderStats() {
     return;
   }
 
-  const published = allDocs.filter(doc => doc.data().status !== "draft");
+  const published = allDocs.filter(doc => isPublished(doc.data()));
   const totalViews = published.reduce((sum, doc) => sum + (doc.data().views || 0), 0);
   const totalLikes = published.reduce((sum, doc) => sum + (doc.data().likes || 0), 0);
 
@@ -132,6 +132,7 @@ function renderPage() {
           <h2 class="dash-title">${escapeHtml(data.title)}</h2>
           <p class="dash-date">
             ${data.status === "draft" ? '<span class="draft-badge">Draft</span> · ' : ""}
+            ${data.status === "scheduled" ? `<span class="scheduled-badge">Scheduled${scheduledForLabel(data.scheduledFor)}</span> · ` : ""}
             ${data.publishedAt || ""} · ${data.views || 0} views
             ${isAdminView && data.authorEmail ? `· ${escapeHtml(data.authorEmail)}` : ""}
           </p>
@@ -272,6 +273,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function escapeHtml(str) {
   return String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function scheduledForLabel(scheduledFor) {
+  if (!scheduledFor || typeof scheduledFor.toDate !== "function") return "";
+  return ` for ${scheduledFor.toDate().toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
 }
 
 window.editBlog = editBlog;

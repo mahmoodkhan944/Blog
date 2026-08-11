@@ -123,6 +123,31 @@ markdown-style editor, and manage your own posts from a dashboard.
   author/admin — and there's a new `comments` subcollection rule block.
   **Re-apply `firestore.rules`** in Firebase Console for this to work.
 
+## Post scheduling
+
+The editor's "🕒 Schedule" button lets you pick a future date/time —
+the post is saved with `status: "scheduled"` and stays hidden from
+public listings (and direct links, for anyone but you/an admin) until
+that time arrives.
+
+**Going live automatically needs Vercel Cron**, configured in
+`vercel.json` to hit `/api/publish-scheduled` **once a day** (Vercel's
+Hobby/free plan only allows daily cron jobs — if you're on Pro, you can
+change the `schedule` in `vercel.json` to something more frequent, e.g.
+`"0 * * * *"` for hourly). This means a scheduled post might sit up to
+~24 hours past its scheduled time before actually going live on the
+free plan — for same-day precision you'd need a paid Vercel plan.
+
+This reuses the same `FIREBASE_SERVICE_ACCOUNT_KEY` env var as the
+newsletter feature. Optionally also set **`CRON_SECRET`** (any random
+string) as an env var — Vercel automatically sends it as a bearer token
+when it calls the cron endpoint, so random people can't spam-trigger it.
+
+**One-time setup**: the first time this runs, Firestore will likely
+throw an index-required error (visible in Vercel's function logs) for
+the `status` + `scheduledFor` query — the error includes a direct link
+to auto-create that index, just click it once.
+
 ## Automatic email notifications
 
 Two emails now send automatically (`server.js`, `/api/notify-subscribers`

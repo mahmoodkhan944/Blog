@@ -37,7 +37,10 @@
                 <h1>Your blogs</h1>
                 <p>Manage everything you've published.</p>
             </div>
-            <a href="/editor" class="btn accent">Write new</a>
+            <div class="dashboard-header-actions">
+                <a href="/settings" class="btn small ghost">⚙ Settings</a>
+                <a href="/editor" class="btn accent">Write new</a>
+            </div>
         </div>
 
         <section class="dash-section">
@@ -64,7 +67,24 @@
             </div>
 
             <div class="blogs-grid">
-                <p class="empty-state">Loading your blogs...</p>
+                <div class="skeleton-card">
+                    <div class="skeleton-block skeleton-image"></div>
+                    <div class="skeleton-block skeleton-line" style="width:80%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:45%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:95%"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-block skeleton-image"></div>
+                    <div class="skeleton-block skeleton-line" style="width:70%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:50%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:85%"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-block skeleton-image"></div>
+                    <div class="skeleton-block skeleton-line" style="width:60%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:40%"></div>
+                    <div class="skeleton-block skeleton-line" style="width:90%"></div>
+                </div>
             </div>
 
             <nav class="pagination" id="pagination"></nav>

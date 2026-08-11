@@ -88,9 +88,29 @@ function htmlToTextShared(html) {
 }
 
 // A post with no `status` field is treated as published (backward
-// compatible with everything written before drafts existed).
+// compatible with everything written before drafts/scheduling existed).
+// Scheduled posts stay hidden from public listings until they actually
+// go live (see /api/publish-scheduled in server.js).
 function isPublished(data) {
-  return data.status !== "draft";
+  return data.status !== "draft" && data.status !== "scheduled";
+}
+
+// ===== LOADING SKELETONS =====
+// A shimmering placeholder card, shown while real data is still
+// loading — used instead of a plain "Loading..." text message.
+function skeletonCardHTML() {
+  return `
+    <div class="skeleton-card">
+      <div class="skeleton-block skeleton-image"></div>
+      <div class="skeleton-block skeleton-line" style="width:80%"></div>
+      <div class="skeleton-block skeleton-line" style="width:45%"></div>
+      <div class="skeleton-block skeleton-line" style="width:95%"></div>
+    </div>
+  `;
+}
+
+function skeletonCards(count) {
+  return Array.from({ length: count }, skeletonCardHTML).join("");
 }
 
 // ===== RECENCY SORTING =====

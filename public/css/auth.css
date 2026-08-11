@@ -73,6 +73,13 @@
   display: block;
 }
 
+.settings-note {
+  margin-top: var(--space-5);
+  font-size: 13px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+
 .google-btn {
   width: 100%;
   display: flex;

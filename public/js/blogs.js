@@ -9,7 +9,7 @@ const categoryPillsEl = document.querySelector("#categoryPills");
 
 let allDocs = [];       // every published post
 let filteredDocs = [];  // after search + category filter
-let activeCategory = "All";
+let activeCategory = new URLSearchParams(location.search).get("category") || "All";
 let searchTerm = "";
 let currentPage = Math.max(1, parseInt(new URLSearchParams(location.search).get("page"), 10) || 1);
 

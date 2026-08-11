@@ -84,6 +84,28 @@
   text-align: right;
 }
 
+.schedule-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+}
+
+.schedule-panel input[type="datetime-local"] {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-alt);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
 /* Banner */
 .banner {
   width: 100%;
@@ -248,6 +270,24 @@
 .article a {
   color: var(--accent-dark);
   text-decoration: underline;
+}
+
+.article table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.article th,
+.article td {
+  border: 1px solid var(--border-strong);
+  padding: 8px 12px;
+  text-align: start;
+}
+
+.article th {
+  background: var(--bg-soft);
+  font-weight: 600;
 }
 
 .article .article-image {

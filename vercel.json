@@ -9,5 +9,11 @@
   ],
   "routes": [
     { "src": "/(.*)", "dest": "server.js" }
+  ],
+  "crons": [
+    {
+      "path": "/api/publish-scheduled",
+      "schedule": "0 0 * * *"
+    }
   ]
 }

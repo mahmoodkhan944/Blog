@@ -118,3 +118,35 @@ function observeReveals() {
 
   items.forEach(el => io.observe(el));
 }
+
+// ===== NEWSLETTER SIGNUP =====
+// Wires up the #newsletterForm markup wherever it appears (home, /blogs,
+// author pages) — just captures the email into Firestore for now.
+// Actually sending "new post" emails is handled server-side (see
+// /api/notify-subscribers in server.js) once RESEND_API_KEY is set.
+function initNewsletterForm() {
+  const form = document.querySelector("#newsletterForm");
+  if (!form) return;
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const emailInput = document.querySelector("#newsletterEmail");
+    const email = emailInput.value.trim();
+    const btn = form.querySelector("button");
+
+    btn.disabled = true;
+
+    try {
+      await db.collection("subscribers").add({
+        email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      form.innerHTML = `<p class="newsletter-success">Thanks — you're subscribed! 🎉</p>`;
+    } catch (err) {
+      console.error(err);
+      alert("Could not subscribe right now. Please try again.");
+      btn.disabled = false;
+    }
+  });
+}

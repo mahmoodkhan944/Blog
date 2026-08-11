@@ -47,32 +47,4 @@ db.collection("blogs")
     moreHeading.style.display = "none";
   });
 
-// ===== NEWSLETTER SIGNUP =====
-// Just captures the email into Firestore for now — actually sending
-// "new post" emails would need a transactional email service (e.g.
-// SendGrid) wired up separately.
-const newsletterForm = document.querySelector("#newsletterForm");
-
-if (newsletterForm) {
-  newsletterForm.addEventListener("submit", async e => {
-    e.preventDefault();
-
-    const emailInput = document.querySelector("#newsletterEmail");
-    const email = emailInput.value.trim();
-    const btn = newsletterForm.querySelector("button");
-
-    btn.disabled = true;
-
-    try {
-      await db.collection("subscribers").add({
-        email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      newsletterForm.innerHTML = `<p class="newsletter-success">Thanks — you're subscribed! 🎉</p>`;
-    } catch (err) {
-      console.error(err);
-      alert("Could not subscribe right now. Please try again.");
-      btn.disabled = false;
-    }
-  });
-}
+initNewsletterForm();

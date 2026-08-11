@@ -379,7 +379,16 @@ function postComment(text, parentId) {
   };
   if (parentId) payload.parentId = parentId;
 
-  return db.collection("blogs").doc(blogId).collection("comments").add(payload);
+  return db.collection("blogs").doc(blogId).collection("comments").add(payload).then(ref => {
+    // Best-effort — let the post's author know, without blocking on it.
+    fetch("/api/notify-comment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blogId, commenterName: payload.authorName, commentText: text })
+    }).catch(() => {});
+
+    return ref;
+  });
 }
 
 // ===== REPLIES =====

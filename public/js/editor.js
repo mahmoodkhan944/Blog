@@ -329,6 +329,16 @@ async function save(status) {
   try {
     await db.collection("blogs").doc(id).set(payload, { merge: true });
 
+    // Best-effort — email subscribers only the first time a post goes
+    // live (skips re-notifying on every later edit/typo-fix).
+    if (status === "published" && existingData?.status !== "published") {
+      fetch("/api/notify-subscribers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: id })
+      }).catch(() => {});
+    }
+
     if (status === "draft") {
       alert("Saved as draft 📝");
       location.href = "/dashboard";

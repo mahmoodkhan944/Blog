@@ -123,6 +123,40 @@ markdown-style editor, and manage your own posts from a dashboard.
   author/admin — and there's a new `comments` subcollection rule block.
   **Re-apply `firestore.rules`** in Firebase Console for this to work.
 
+## Automatic email notifications
+
+Two emails now send automatically (`server.js`, `/api/notify-subscribers`
+and `/api/notify-comment`):
+1. **New post published** → every newsletter subscriber gets an email
+   (only on the post's *first* publish, not on later edits).
+2. **New comment/reply posted** → the post's author gets an email
+   (skipped if they commented on their own post).
+
+**This needs two environment variables set** (locally in a `.env` file
+loaded however you prefer, and in Vercel → Project → Settings →
+Environment Variables for production) — without both, these two
+endpoints just quietly do nothing rather than erroring:
+
+- **`RESEND_API_KEY`** — sign up free at [resend.com](https://resend.com)
+  (no card needed), create an API key, paste it in. Emails send from
+  `onboarding@resend.dev` by default, which works immediately but looks
+  less trustworthy to recipients — once you're ready, verify your own
+  domain in Resend and change the `from` address in `server.js`
+  (`sendEmail()` calls) to something like `Blog <hello@yourdomain.com>`.
+
+- **`FIREBASE_SERVICE_ACCOUNT_KEY`** — Firebase Console → your project →
+  ⚙️ Project Settings → Service Accounts tab → **Generate new private
+  key**. This downloads a JSON file — open it, copy the *entire* contents,
+  and paste that as the environment variable's value (as one single-line
+  string). This is a sensitive credential (full admin access to your
+  Firestore) — never commit it to the repo, only set it as an env var.
+
+  This is only needed because the `subscribers` collection is
+  deliberately unreadable by normal client requests (see
+  `firestore.rules`), to keep people's emails private — sending the
+  newsletter requires this privileged server credential to read that
+  list instead.
+
 ## Project structure
 
 ```

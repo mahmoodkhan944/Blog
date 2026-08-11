@@ -2,10 +2,11 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
+const admin = require("firebase-admin");
 
 const app = express();
 
-// Must match firebaseConfig.projectId in public/js/firebase.js.
+
 const FIREBASE_PROJECT_ID = "blogging-website-12a92";
 
 app.use(express.json());
@@ -134,6 +135,187 @@ function fetchAllBlogIds() {
       .on("error", () => resolve([]));
   });
 }
+
+// ===== EMAIL NOTIFICATIONS =====
+// Two automatic emails:
+//   1. New post published -> every newsletter subscriber
+//   2. New comment posted -> that post's author
+//
+// Needs two things set as environment variables (Vercel → Project →
+// Settings → Environment Variables) to actually send anything — until
+// both are set, these endpoints just no-op quietly instead of failing:
+//
+//   RESEND_API_KEY             — from resend.com (free tier, no card)
+//   FIREBASE_SERVICE_ACCOUNT_KEY — the full JSON from Firebase Console →
+//                                  Project Settings → Service Accounts →
+//                                  Generate new private key, pasted in
+//                                  as a single-line string.
+//
+// The service account is needed ONLY to read the "subscribers" list —
+// that collection is deliberately unreadable by normal client requests
+// (see firestore.rules) to keep people's emails private, so sending the
+// newsletter has to go through a privileged server credential instead.
+
+let adminApp = null;
+function getAdminApp() {
+  if (admin.apps.length > 0) return admin.apps[0];
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) return null;
+
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    adminApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    return adminApp;
+  } catch (err) {
+    console.error("Failed to initialize firebase-admin:", err);
+    return null;
+  }
+}
+
+function sendEmail({ to, bcc, subject, html }) {
+  return new Promise(resolve => {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("RESEND_API_KEY not set — skipping email send.");
+      return resolve(false);
+    }
+
+    const payload = JSON.stringify({
+      from: "Blog <onboarding@resend.dev>",
+      to,
+      bcc,
+      subject,
+      html
+    });
+
+    const req = https.request(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload)
+        }
+      },
+      res => {
+        let body = "";
+        res.on("data", chunk => (body += chunk));
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(true);
+          } else {
+            console.error("Resend error:", res.statusCode, body);
+            resolve(false);
+          }
+        });
+      }
+    );
+
+    req.on("error", err => {
+      console.error("Email send failed:", err);
+      resolve(false);
+    });
+
+    req.write(payload);
+    req.end();
+  });
+}
+
+// Called right after a post goes live (see public/js/editor.js).
+// Re-fetches the post itself server-side rather than trusting whatever
+// the client sends, so the email content can't be spoofed through this
+// endpoint.
+app.post("/api/notify-subscribers", async (req, res) => {
+  try {
+    const { postId } = req.body || {};
+    if (!postId) return res.status(400).json({ error: "postId required" });
+
+    const data = await fetchBlogDoc(postId);
+    if (!data || data.status === "draft") {
+      return res.status(404).json({ error: "Post not found or not published" });
+    }
+
+    const adminInstance = getAdminApp();
+    if (!adminInstance) {
+      return res.json({ sent: false, reason: "Email notifications aren't configured yet." });
+    }
+
+    const subscribersSnap = await adminInstance.firestore().collection("subscribers").get();
+    const emails = subscribersSnap.docs.map(d => d.data().email).filter(Boolean);
+
+    if (emails.length === 0) {
+      return res.json({ sent: false, reason: "No subscribers yet." });
+    }
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const postUrl = `${baseUrl}/${postId}`;
+    const bannerUrl = absoluteUrl(req, data.bannerImage);
+    const excerpt = stripHtmlTags(data.article).slice(0, 200);
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;">
+        <img src="${bannerUrl}" style="width:100%;border-radius:12px;margin-bottom:16px;" alt="">
+        <h2 style="margin:0 0 8px;">${escapeAttr(data.title)}</h2>
+        <p style="color:#555;line-height:1.6;">${escapeAttr(excerpt)}...</p>
+        <a href="${postUrl}" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#D96C4A;color:#fff;text-decoration:none;border-radius:24px;">Read the full post</a>
+      </div>
+    `;
+
+    // BCC everyone in one send so subscribers never see each other's
+    // email addresses.
+    const ok = await sendEmail({
+      to: "Blog <onboarding@resend.dev>",
+      bcc: emails,
+      subject: `New post: ${data.title}`,
+      html
+    });
+
+    res.json({ sent: ok });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not send notifications" });
+  }
+});
+
+// Called right after a comment/reply is posted (see public/js/blog.js).
+app.post("/api/notify-comment", async (req, res) => {
+  try {
+    const { blogId, commenterName, commentText } = req.body || {};
+    if (!blogId || !commentText) return res.status(400).json({ error: "Missing fields" });
+
+    const data = await fetchBlogDoc(blogId);
+    if (!data || !data.authorEmail) {
+      return res.json({ sent: false, reason: "No author email on file." });
+    }
+
+    // Don't email an author about their own comment on their own post.
+    if (data.authorName && commenterName && data.authorName === commenterName) {
+      return res.json({ sent: false, reason: "Author commented on their own post." });
+    }
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const postUrl = `${baseUrl}/${blogId}`;
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;">
+        <h2 style="margin:0 0 8px;">New comment on "${escapeAttr(data.title)}"</h2>
+        <p style="color:#555;"><strong>${escapeAttr(commenterName || "Someone")}</strong> wrote:</p>
+        <p style="background:#f4f1ec;padding:12px 16px;border-radius:8px;color:#333;">${escapeAttr(commentText)}</p>
+        <a href="${postUrl}" style="display:inline-block;margin-top:16px;padding:10px 20px;background:#D96C4A;color:#fff;text-decoration:none;border-radius:24px;">View the comment</a>
+      </div>
+    `;
+
+    const ok = await sendEmail({
+      to: data.authorEmail,
+      subject: `New comment on your post "${data.title}"`,
+      html
+    });
+
+    res.json({ sent: ok });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not send notification" });
+  }
+});
 
 // ===== PAGES (explicit routes first, catch-all last) =====
 

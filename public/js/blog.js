@@ -38,6 +38,10 @@ db.collection("blogs").doc(blogId).get()
     titleEl.innerText = data.title;
     document.title = `Blog : ${data.title}`;
 
+    // ===== TEXT DIRECTION (RTL support for Urdu/Arabic/etc.) =====
+    const dir = data.direction || detectTextDirection(data.title + " " + getArticlePlainText(data));
+    document.querySelector(".blog").setAttribute("dir", dir);
+
     // ===== CATEGORY BADGE =====
     if (data.category) {
       const badge = document.createElement("span");
@@ -347,6 +351,9 @@ function renderCommentForm(user) {
     </form>
   `;
 
+  const textEl = document.getElementById("commentText");
+  textEl.addEventListener("input", () => textEl.setAttribute("dir", detectTextDirection(textEl.value)));
+
   document.getElementById("commentForm").addEventListener("submit", submitComment);
 }
 
@@ -415,7 +422,9 @@ function showReplyForm(commentId) {
       <button type="submit" class="btn accent small">Reply</button>
     </form>
   `;
-  wrap.querySelector("textarea").focus();
+  const replyTextarea = wrap.querySelector("textarea");
+  replyTextarea.addEventListener("input", () => replyTextarea.setAttribute("dir", detectTextDirection(replyTextarea.value)));
+  replyTextarea.focus();
 }
 
 async function submitReply(e, parentId) {
@@ -481,7 +490,7 @@ function renderComments(snapshot) {
           <span class="comment-date">${when}</span>
           ${canModerate && c.reportCount > 0 ? `<span class="comment-reported-badge">⚠️ Reported (${c.reportCount})</span>` : ""}
         </div>
-        <p class="comment-text">${escapeHtml(c.text)}</p>
+        <p class="comment-text" dir="${detectTextDirection(c.text)}">${escapeHtml(c.text)}</p>
         <div class="comment-actions">
           ${!isReply ? `<button class="comment-reply-btn" onclick="showReplyForm('${c.id}')">Reply</button>` : ""}
           ${canReport ? `<button class="comment-report-btn" onclick="reportComment('${c.id}')" ${alreadyReported ? "disabled" : ""}>${alreadyReported ? "Reported" : "Report"}</button>` : ""}

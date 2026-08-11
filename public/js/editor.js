@@ -42,8 +42,14 @@ async function init() {
 
   checkForAutosave();
 
-  document.querySelector(".title").addEventListener("input", scheduleAutosave);
-  document.querySelector(".article").addEventListener("input", scheduleAutosave);
+  document.querySelector(".title").addEventListener("input", () => {
+    scheduleAutosave();
+    scheduleDirectionDetect();
+  });
+  document.querySelector(".article").addEventListener("input", () => {
+    scheduleAutosave();
+    scheduleDirectionDetect();
+  });
 
   document.querySelector(".publish-btn").addEventListener("click", () => save("published"));
   document.querySelector(".draft-btn").addEventListener("click", () => save("draft"));
@@ -177,6 +183,10 @@ async function loadForEdit(id) {
       setBannerImage(document.querySelector(".banner"), bannerPath);
     }
 
+    const dir = data.direction || detectTextDirection(data.title + " " + (data.article || ""));
+    document.querySelector(".title").setAttribute("dir", dir);
+    articleField.setAttribute("dir", dir);
+
     document.querySelector(".publish-btn").textContent = data.status === "draft" ? "Publish" : "Update";
     document.title = "Blog : Editing " + data.title;
     return true;
@@ -302,6 +312,35 @@ function redoEdit() {
   document.execCommand("redo");
 }
 
+// ===== TEXT DIRECTION (RTL support for Urdu/Arabic/etc.) =====
+// Auto-detects as you type (debounced), plus a manual toggle button for
+// when you want to override it — see detectTextDirection() in
+// blog-cards.js.
+let directionTimer = null;
+
+function scheduleDirectionDetect() {
+  clearTimeout(directionTimer);
+  directionTimer = setTimeout(applyDetectedDirection, 400);
+}
+
+function applyDetectedDirection() {
+  const titleField = document.querySelector(".title");
+  const articleField = document.querySelector(".article");
+  const dir = detectTextDirection(titleField.value + " " + articleField.innerText);
+  titleField.setAttribute("dir", dir);
+  articleField.setAttribute("dir", dir);
+}
+
+function toggleDirection() {
+  const titleField = document.querySelector(".title");
+  const articleField = document.querySelector(".article");
+  const newDir = articleField.getAttribute("dir") === "rtl" ? "ltr" : "rtl";
+  titleField.setAttribute("dir", newDir);
+  articleField.setAttribute("dir", newDir);
+}
+
+window.toggleDirection = toggleDirection;
+
 function addHeading() {
   // Toggle: if the current block is already a heading, switch it back
   // to a plain paragraph instead of just re-applying <h2> every time.
@@ -401,7 +440,11 @@ async function save(status) {
     contentFormat: "html",
     bannerImage: bannerPath,
     category,
-    status
+    status,
+    // Whatever direction the editor ended up in (auto-detected or
+    // manually toggled) — saved so the published page doesn't have to
+    // re-guess it every time.
+    direction: articleField.getAttribute("dir") || detectTextDirection(title + " " + articleText)
   };
 
   // Only stamp author + publish date/time when a post is first created —

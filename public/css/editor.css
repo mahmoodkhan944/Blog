@@ -229,7 +229,7 @@
 
 .article ul,
 .article ol {
-  padding-left: 24px;
+  padding-inline-start: 24px;
   margin: var(--space-3) 0;
 }
 
@@ -240,7 +240,7 @@
 .article blockquote {
   margin: var(--space-4) 0;
   padding: var(--space-2) var(--space-4);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   color: var(--ink-soft);
   font-style: italic;
 }

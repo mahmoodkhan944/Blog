@@ -8,8 +8,9 @@
 const BLOG_CATEGORIES = ["Travel", "Religion", "Community", "News", "Culture", "Education", "Other"];
 
 function blogCardHTML(id, data) {
+  const dir = data.direction || detectTextDirection(data.title);
   return `
-    <article class="blog-card reveal">
+    <article class="blog-card reveal" dir="${dir}">
       <a href="/${id}" class="blog-image-wrap">
         <img src="${data.bannerImage}" class="blog-image" alt="${escapeHtmlShared(data.title)}" loading="lazy">
         ${data.category ? `<span class="card-category">${escapeHtmlShared(data.category)}</span>` : ""}
@@ -23,8 +24,9 @@ function blogCardHTML(id, data) {
 }
 
 function featuredCardHTML(id, data) {
+  const dir = data.direction || detectTextDirection(data.title);
   return `
-    <article class="featured-card reveal">
+    <article class="featured-card reveal" dir="${dir}">
       <a href="/${id}" class="featured-image-wrap">
         <img src="${data.bannerImage}" class="featured-image" alt="${escapeHtmlShared(data.title)}" loading="lazy">
       </a>
@@ -56,6 +58,26 @@ function buildCardMeta(data) {
 
 function escapeHtmlShared(str) {
   return String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ===== TEXT DIRECTION (RTL support) =====
+// Detects Arabic/Urdu/Persian/Hebrew script so those posts read
+// right-to-left (alignment, punctuation, bullet points — everything)
+// instead of being forced into a left-to-right layout.
+function detectTextDirection(text) {
+  if (!text) return "ltr";
+
+  const rtlChars = (text.match(/[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+  const ltrChars = (text.match(/[A-Za-z]/g) || []).length;
+
+  return rtlChars > ltrChars ? "rtl" : "ltr";
+}
+
+// Plain text used for direction detection — works for both the new
+// WYSIWYG HTML format and the older markdown-lite text format.
+function getArticlePlainText(data) {
+  if (data.contentFormat === "html") return htmlToTextShared(data.article);
+  return data.article || "";
 }
 
 // Strips HTML tags for card previews (safe: DOMParser output is never

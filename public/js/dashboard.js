@@ -62,6 +62,7 @@ function renderPage() {
         <div class="dash-body">
           <h2 class="dash-title">${escapeHtml(data.title)}</h2>
           <p class="dash-date">
+            ${data.status === "draft" ? '<span class="draft-badge">Draft</span> · ' : ""}
             ${data.publishedAt || ""} · ${data.views || 0} views
             ${isAdminView && data.authorEmail ? `· ${escapeHtml(data.authorEmail)}` : ""}
           </p>

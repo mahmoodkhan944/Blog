@@ -147,6 +147,7 @@ app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public/login.
 app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public/dashboard.html")));
 app.get("/editor", (req, res) => res.sendFile(path.join(__dirname, "public/editor.html")));
 app.get("/blogs", (req, res) => res.sendFile(path.join(__dirname, "public/blogs.html")));
+app.get("/author/:uid", (req, res) => res.sendFile(path.join(__dirname, "public/author.html")));
 
 app.get("/robots.txt", (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;

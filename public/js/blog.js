@@ -11,7 +11,7 @@ const articleEl = document.querySelector(".article");
 
 // ===== FETCH BLOG =====
 db.collection("blogs").doc(blogId).get()
-  .then(doc => {
+  .then(async doc => {
     if (!doc.exists) {
       location.href = "/";
       return;
@@ -19,9 +19,36 @@ db.collection("blogs").doc(blogId).get()
 
     const data = doc.data();
 
+    // Drafts are only visible to their author or an admin — everyone
+    // else is redirected away, same as a post that doesn't exist.
+    if (data.status === "draft") {
+      const user = await new Promise(resolve => {
+        const unsub = auth.onAuthStateChanged(u => { unsub(); resolve(u); });
+      });
+      const allowed = user && (data.authorId === user.uid || (typeof isAdmin === "function" && isAdmin(user)));
+      if (!allowed) {
+        location.href = "/";
+        return;
+      }
+    }
+
     // ===== SET TITLE =====
     titleEl.innerText = data.title;
     document.title = `Blog : ${data.title}`;
+
+    // ===== CATEGORY BADGE =====
+    if (data.category) {
+      const badge = document.createElement("span");
+      badge.className = "article-category";
+      badge.textContent = data.category;
+      titleEl.parentNode.insertBefore(badge, titleEl);
+    }
+    if (data.status === "draft") {
+      const draftBadge = document.createElement("span");
+      draftBadge.className = "article-category draft";
+      draftBadge.textContent = "Draft — only visible to you";
+      titleEl.parentNode.insertBefore(draftBadge, titleEl);
+    }
 
     // ===== SET DATE / AUTHOR =====
     publishEl.innerHTML = buildPublishedLine(data);
@@ -82,7 +109,8 @@ function buildPublishedLine(data) {
   const parts = [];
 
   if (data.authorName) {
-    parts.push(`<span>${escapeHtml(data.authorName)}</span>`);
+    const name = escapeHtml(data.authorName);
+    parts.push(data.authorId ? `<a href="/author/${data.authorId}" class="author-link">${name}</a>` : `<span>${name}</span>`);
   }
 
   let when = data.publishedAt || "";
@@ -405,7 +433,7 @@ function loadRelatedBlogs() {
   db.collection("blogs").get()
     .then(res => {
       const picks = sortDocsByRecency(res.docs)
-        .filter(doc => doc.id !== blogId)
+        .filter(doc => doc.id !== blogId && isPublished(doc.data()))
         .slice(0, 8);
 
       if (picks.length === 0) return; // nothing else published yet

@@ -33,8 +33,26 @@
 
 .actions {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
   flex-shrink: 0;
+}
+
+.category-select {
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-alt);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+}
+
+.category-select:focus {
+  border-color: var(--accent);
 }
 
 /* Banner */
@@ -226,9 +244,20 @@
 
   .actions {
     width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .category-select {
+    order: -1;
+    width: 100%;
   }
 
   .publish-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .draft-btn {
     flex: 1;
     text-align: center;
   }

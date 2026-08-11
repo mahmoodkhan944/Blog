@@ -14,13 +14,15 @@ const viewAllWrap = document.querySelector("#viewAllWrap");
 db.collection("blogs")
   .get()
   .then(res => {
-    if (res.empty) {
+    const published = res.docs.filter(doc => isPublished(doc.data()));
+
+    if (published.length === 0) {
       featuredWrap.innerHTML = `<p class="empty-state">No blogs published yet. <a href="/editor">Write the first one</a>.</p>`;
       moreHeading.style.display = "none";
       return;
     }
 
-    const sorted = sortDocsByRecency(res.docs);
+    const sorted = sortDocsByRecency(published);
     const docs = sorted.slice(0, HOME_LIMIT);
     const [featuredDoc, ...restDocs] = docs;
 

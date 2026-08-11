@@ -12,10 +12,25 @@ const errorBox = document.querySelector("#authError");
 const titleEl = document.querySelector("#authTitle");
 const subtitleEl = document.querySelector("#authSubtitle");
 const switchBtn = document.querySelector("#authSwitch");
+const googleBtn = document.querySelector("#googleBtn");
 
 // If already logged in, skip straight to the dashboard.
 auth.onAuthStateChanged(user => {
   if (user) location.href = "/dashboard";
+});
+
+googleBtn.addEventListener("click", async () => {
+  googleBtn.disabled = true;
+  errorBox.classList.remove("show");
+
+  try {
+    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    location.href = "/dashboard";
+  } catch (err) {
+    errorBox.textContent = friendlyAuthError(err);
+    errorBox.classList.add("show");
+    googleBtn.disabled = false;
+  }
 });
 
 switchBtn.addEventListener("click", () => {

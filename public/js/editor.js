@@ -15,6 +15,7 @@ let savedImageRange = null; // only used to survive the file-picker dialog
 
 document.addEventListener("DOMContentLoaded", () => {
   document.execCommand("defaultParagraphSeparator", false, "p");
+  populateCategorySelect();
 
   auth.onAuthStateChanged(user => {
     if (!user || initialized) return; // requireAuth() handles the redirect
@@ -23,6 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
     init();
   });
 });
+
+function populateCategorySelect() {
+  const select = document.querySelector("#categorySelect");
+  if (!select) return;
+  select.innerHTML = BLOG_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join("");
+}
 
 async function init() {
   const params = new URLSearchParams(location.search);
@@ -33,9 +40,8 @@ async function init() {
     if (!canEdit) return; // already redirected away
   }
 
-  const articleField = document.querySelector(".article");
-
-  document.querySelector(".publish-btn").addEventListener("click", publish);
+  document.querySelector(".publish-btn").addEventListener("click", () => save("published"));
+  document.querySelector(".draft-btn").addEventListener("click", () => save("draft"));
 
   const bannerUpload = document.querySelector("#banner-upload");
   if (bannerUpload) bannerUpload.addEventListener("change", handleBannerUpload);
@@ -69,6 +75,9 @@ async function loadForEdit(id) {
 
     document.querySelector(".title").value = data.title || "";
 
+    const categorySelect = document.querySelector("#categorySelect");
+    if (categorySelect && data.category) categorySelect.value = data.category;
+
     const articleField = document.querySelector(".article");
     if (data.contentFormat === "html") {
       // Already in the new WYSIWYG format — load it in directly.
@@ -88,7 +97,7 @@ async function loadForEdit(id) {
       setBannerImage(document.querySelector(".banner"), bannerPath);
     }
 
-    document.querySelector(".publish-btn").textContent = "Update";
+    document.querySelector(".publish-btn").textContent = data.status === "draft" ? "Publish" : "Update";
     document.title = "Blog : Editing " + data.title;
     return true;
   } catch (err) {
@@ -247,16 +256,24 @@ window.addItalic = addItalic;
 window.addList = addList;
 window.clearFormat = clearFormat;
 
-// ===== PUBLISH / UPDATE =====
-async function publish() {
+// ===== SAVE (Publish or Save Draft) =====
+async function save(status) {
   const title = document.querySelector(".title").value.trim();
   const articleField = document.querySelector(".article");
   const articleText = articleField.innerText.trim();
+  const category = document.querySelector("#categorySelect")?.value || "Other";
   const publishBtn = document.querySelector(".publish-btn");
+  const draftBtn = document.querySelector(".draft-btn");
 
-  if (!title || title.length < 5) return alert("Title too short");
-  if (!articleText || articleText.length < 20) return alert("Write proper content");
-  if (!bannerPath) return alert("Upload a banner image");
+  // Drafts can be saved with less complete content — full validation
+  // only applies when actually publishing.
+  if (status === "published") {
+    if (!title || title.length < 5) return alert("Title too short");
+    if (!articleText || articleText.length < 20) return alert("Write proper content");
+    if (!bannerPath) return alert("Upload a banner image");
+  } else if (!title) {
+    return alert("Give your draft at least a title so you can find it again.");
+  }
 
   const articleHTML = DOMPurify.sanitize(articleField.innerHTML, {
     ALLOWED_TAGS: ARTICLE_ALLOWED_TAGS,
@@ -269,7 +286,9 @@ async function publish() {
     title,
     article: articleHTML,
     contentFormat: "html",
-    bannerImage: bannerPath
+    bannerImage: bannerPath,
+    category,
+    status
   };
 
   // Only stamp author + publish date/time when a post is first created —
@@ -302,16 +321,26 @@ async function publish() {
   }
 
   publishBtn.disabled = true;
-  publishBtn.textContent = editId ? "Updating..." : "Publishing...";
+  draftBtn.disabled = true;
+  const clickedBtn = status === "draft" ? draftBtn : publishBtn;
+  const originalLabel = clickedBtn.textContent;
+  clickedBtn.textContent = status === "draft" ? "Saving..." : (editId ? "Updating..." : "Publishing...");
 
   try {
     await db.collection("blogs").doc(id).set(payload, { merge: true });
-    alert(editId ? "Updated ✅" : "Published ✅");
-    location.href = "/" + id;
+
+    if (status === "draft") {
+      alert("Saved as draft 📝");
+      location.href = "/dashboard";
+    } else {
+      alert(editId ? "Updated ✅" : "Published ✅");
+      location.href = "/" + id;
+    }
   } catch (err) {
     console.error(err);
     alert("Something went wrong. Please try again.");
     publishBtn.disabled = false;
-    publishBtn.textContent = editId ? "Update" : "Publish";
+    draftBtn.disabled = false;
+    clickedBtn.textContent = originalLabel;
   }
 }

@@ -12,7 +12,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog : Dashboard</title>
+    <title>Blog : Author</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:ital,wght@0,400;0,500;0,600;1,600&display=swap" rel="stylesheet">
@@ -20,27 +20,20 @@
     <link rel="stylesheet" href="/css/variables.css">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body>
 
     <div id="navbar-root"></div>
 
-    <div class="dashboard">
-        <div class="dashboard-header">
-            <div>
-                <h1>Your blogs</h1>
-                <p>Manage everything you've published.</p>
-            </div>
-            <a href="/editor" class="btn accent">Write new</a>
-        </div>
-
-        <div class="blogs-grid">
-            <p class="empty-state">Loading your blogs...</p>
-        </div>
-
-        <nav class="pagination" id="pagination"></nav>
+    <div class="section-heading no-hero" id="authorHeading">
+        <span class="eyebrow">Author</span>
+        <h2 id="authorName">Loading...</h2>
+        <p id="authorCount"></p>
     </div>
+
+    <section class="blogs-section" id="authorPosts">
+        <p class="empty-state">Loading posts...</p>
+    </section>
 
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
@@ -49,11 +42,10 @@
 
     <script src="/js/firebase.js"></script>
     <script src="/js/auth.js"></script>
-    <script src="/js/config.js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/nav.js"></script>
     <script src="/js/blog-cards.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="/js/author.js"></script>
 
 </body>
 </html>

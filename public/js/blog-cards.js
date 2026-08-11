@@ -1,12 +1,18 @@
 // ===== SHARED BLOG CARD RENDERING =====
-// Used by home.js (featured + latest 8) and blogs.js (all posts) so every
-// page renders identical cards without duplicating markup/logic.
+// Used by home.js (featured + latest 8), blogs.js (all posts), author.js
+// (one author's posts), and blog.js (related posts) so every page
+// renders identical cards without duplicating markup/logic.
+
+// Fixed category list — used by the editor's category picker and the
+// filter pills on /blogs. Keep this in sync in both places if changed.
+const BLOG_CATEGORIES = ["Travel", "Religion", "Community", "News", "Culture", "Education", "Other"];
 
 function blogCardHTML(id, data) {
   return `
     <article class="blog-card reveal">
       <a href="/${id}" class="blog-image-wrap">
         <img src="${data.bannerImage}" class="blog-image" alt="${escapeHtmlShared(data.title)}" loading="lazy">
+        ${data.category ? `<span class="card-category">${escapeHtmlShared(data.category)}</span>` : ""}
       </a>
       <h2 class="blog-title"><a href="/${id}">${escapeHtmlShared(data.title)}</a></h2>
       <p class="blog-meta">${buildCardMeta(data)}</p>
@@ -23,7 +29,7 @@ function featuredCardHTML(id, data) {
         <img src="${data.bannerImage}" class="featured-image" alt="${escapeHtmlShared(data.title)}" loading="lazy">
       </a>
       <div class="featured-body">
-        <span class="eyebrow">Latest story</span>
+        <span class="eyebrow">${data.category ? escapeHtmlShared(data.category) : "Latest story"}</span>
         <h2 class="featured-title"><a href="/${id}">${escapeHtmlShared(data.title)}</a></h2>
         <p class="featured-meta">${buildCardMeta(data)}</p>
         <p class="featured-overview">${escapeHtmlShared(htmlToTextShared(data.article).substring(0, 220))}...</p>
@@ -36,7 +42,10 @@ function featuredCardHTML(id, data) {
 function buildCardMeta(data) {
   const parts = [];
 
-  if (data.authorName) parts.push(escapeHtmlShared(data.authorName));
+  if (data.authorName) {
+    const name = escapeHtmlShared(data.authorName);
+    parts.push(data.authorId ? `<a href="/author/${data.authorId}" class="card-author-link">${name}</a>` : name);
+  }
 
   let when = data.publishedAt || "";
   if (data.publishedTime) when += ` at ${data.publishedTime}`;
@@ -54,6 +63,12 @@ function escapeHtmlShared(str) {
 function htmlToTextShared(html) {
   const doc = new DOMParser().parseFromString(html || "", "text/html");
   return doc.body.textContent || "";
+}
+
+// A post with no `status` field is treated as published (backward
+// compatible with everything written before drafts existed).
+function isPublished(data) {
+  return data.status !== "draft";
 }
 
 // ===== RECENCY SORTING =====

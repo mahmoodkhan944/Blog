@@ -18,9 +18,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:ital,wght@0,400;0,500;0,600;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-    <link rel="stylesheet" href="css/variables.css">
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/editor.css">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/editor.css">
 </head>
 <body>
 
@@ -32,6 +32,8 @@
         <div class="editor-header">
             <input type="text" class="title" placeholder="Enter blog title..." />
             <div class="actions">
+                <select class="category-select" id="categorySelect" title="Category"></select>
+                <button class="draft-btn btn ghost">Save Draft</button>
                 <button class="publish-btn btn accent">Publish</button>
             </div>
         </div>
@@ -87,13 +89,14 @@
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-storage.js"></script>
 
-    <script src="js/firebase.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/theme.js"></script>
-    <script src="js/nav.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/editor.js"></script>
+    <script src="/js/firebase.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/config.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/nav.js"></script>
+    <script src="/js/blog-cards.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/editor.js"></script>
 
 </body>
 </html>

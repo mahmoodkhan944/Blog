@@ -121,6 +121,21 @@
   margin: 10px 0;
 }
 
+.article blockquote {
+  margin: var(--space-6) 0;
+  padding: var(--space-3) var(--space-5);
+  border-left: 4px solid var(--accent);
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 1.05em;
+}
+
+.article a {
+  color: var(--accent-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Single image standing on its own — centered, moderate size */
 .article-image {
   max-width: 480px;
@@ -444,6 +459,37 @@
 .comment-reply-btn:hover {
   color: var(--accent-dark);
   text-decoration: underline;
+}
+
+.comment-report-btn {
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.comment-report-btn:hover {
+  color: var(--danger);
+  text-decoration: underline;
+}
+
+.comment-report-btn:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.comment-reported-badge {
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
 }
 
 .comment-replies {

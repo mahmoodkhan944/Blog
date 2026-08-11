@@ -2,6 +2,7 @@ renderNav("blog", { onDark: true });
 
 // ===== GET BLOG ID =====
 const blogId = decodeURI(location.pathname.split("/").pop());
+let postAuthorId = null;
 
 // ===== ELEMENTS =====
 const banner = document.querySelector(".banner");
@@ -18,6 +19,7 @@ db.collection("blogs").doc(blogId).get()
     }
 
     const data = doc.data();
+    postAuthorId = data.authorId || null;
 
     // Drafts are only visible to their author or an admin — everyone
     // else is redirected away, same as a post that doesn't exist.
@@ -67,8 +69,8 @@ db.collection("blogs").doc(blogId).get()
     // ===== RENDER ARTICLE =====
     if (data.contentFormat === "html") {
       articleEl.innerHTML = DOMPurify.sanitize(data.article || "", {
-        ALLOWED_TAGS: ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br"],
-        ALLOWED_ATTR: ["src", "alt", "class"]
+        ALLOWED_TAGS: ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote"],
+        ALLOWED_ATTR: ["src", "alt", "class", "href", "target", "rel"]
       });
     } else {
       // Older post written in the previous markdown-lite format.
@@ -455,6 +457,7 @@ function renderComments(snapshot) {
 
   const currentUid = auth.currentUser?.uid;
   const admin = typeof isAdmin === "function" && isAdmin(auth.currentUser);
+  const canModerate = !!currentUid && (currentUid === postAuthorId || admin);
 
   const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   const topLevel = all.filter(c => !c.parentId);
@@ -466,18 +469,22 @@ function renderComments(snapshot) {
   Object.values(repliesByParent).forEach(list => list.sort((a, b) => getSortTime(a) - getSortTime(b)));
 
   function commentHTML(c, isReply) {
-    const canDelete = currentUid && (c.authorId === currentUid || admin);
+    const canDelete = currentUid && (c.authorId === currentUid || canModerate);
+    const canReport = currentUid && c.authorId !== currentUid && !canModerate;
     const when = c.createdAt?.toDate ? formatCommentDate(c.createdAt.toDate()) : "just now";
+    const alreadyReported = localStorage.getItem(`reported_${c.id}`) === "1";
 
     return `
       <div class="comment-item ${isReply ? "comment-reply" : ""}">
         <div class="comment-head">
           <span class="comment-author">${escapeHtml(c.authorName || "Anonymous")}</span>
           <span class="comment-date">${when}</span>
+          ${canModerate && c.reportCount > 0 ? `<span class="comment-reported-badge">⚠️ Reported (${c.reportCount})</span>` : ""}
         </div>
         <p class="comment-text">${escapeHtml(c.text)}</p>
         <div class="comment-actions">
           ${!isReply ? `<button class="comment-reply-btn" onclick="showReplyForm('${c.id}')">Reply</button>` : ""}
+          ${canReport ? `<button class="comment-report-btn" onclick="reportComment('${c.id}')" ${alreadyReported ? "disabled" : ""}>${alreadyReported ? "Reported" : "Report"}</button>` : ""}
           ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${c.id}')">Delete</button>` : ""}
         </div>
         ${!isReply ? `<div class="reply-form-wrap" id="replyForm-${c.id}" style="display:none"></div>` : ""}
@@ -505,6 +512,26 @@ async function deleteComment(commentId) {
 }
 
 window.deleteComment = deleteComment;
+
+// Anyone signed in (other than the comment's own author) can flag a
+// comment — tracked per-browser so the same person can't spam-report.
+// The post's author/admin then sees a "Reported" badge right on the
+// comment and can delete it from there.
+async function reportComment(commentId) {
+  if (localStorage.getItem(`reported_${commentId}`) === "1") return;
+
+  try {
+    await db.collection("blogs").doc(blogId).collection("comments").doc(commentId).update({
+      reportCount: firebase.firestore.FieldValue.increment(1)
+    });
+    localStorage.setItem(`reported_${commentId}`, "1");
+  } catch (err) {
+    console.error(err);
+    alert("Could not report this comment. Please try again.");
+  }
+}
+
+window.reportComment = reportComment;
 
 function formatCommentDate(date) {
   return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;

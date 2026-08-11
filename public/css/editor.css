@@ -55,6 +55,33 @@
   border-color: var(--accent);
 }
 
+.autosave-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.autosave-banner-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.autosave-status {
+  margin-top: var(--space-3);
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-align: right;
+}
+
 /* Banner */
 .banner {
   width: 100%;
@@ -206,6 +233,19 @@
 
 .article li {
   margin: 6px 0;
+}
+
+.article blockquote {
+  margin: var(--space-4) 0;
+  padding: var(--space-2) var(--space-4);
+  border-left: 3px solid var(--accent);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.article a {
+  color: var(--accent-dark);
+  text-decoration: underline;
 }
 
 .article .article-image {

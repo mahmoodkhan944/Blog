@@ -28,19 +28,22 @@
 </head>
 <body>
 
+    <a href="#main" class="skip-link">Skip to content</a>
     <div id="navbar-root"></div>
 
-    <div class="editor-container">
+    <div class="editor-container" id="main" tabindex="-1">
 
         <!-- TOP BAR -->
         <div class="editor-header">
             <input type="text" class="title" placeholder="Enter blog title..." />
             <div class="actions">
-                <select class="category-select" id="categorySelect" title="Category"></select>
+                <select class="category-select" id="categorySelect" title="Category" aria-label="Category"></select>
                 <button class="draft-btn btn ghost">Save Draft</button>
                 <button class="publish-btn btn accent">Publish</button>
             </div>
         </div>
+
+        <div class="autosave-banner" id="autosaveBanner" style="display:none"></div>
 
         <!-- BANNER -->
         <div class="banner" onclick="openBannerUpload()">
@@ -52,30 +55,36 @@
 
         <!-- TOOLBAR (sticky — stays reachable while scrolling/writing) -->
         <div class="toolbar">
-            <button onmousedown="event.preventDefault()" onclick="undoEdit()" title="Undo">
+            <button onmousedown="event.preventDefault()" onclick="undoEdit()" title="Undo" aria-label="Undo">
                 <i class="fa-solid fa-rotate-left"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="redoEdit()" title="Redo">
+            <button onmousedown="event.preventDefault()" onclick="redoEdit()" title="Redo" aria-label="Redo">
                 <i class="fa-solid fa-rotate-right"></i>
             </button>
             <span class="toolbar-divider"></span>
-            <button onmousedown="event.preventDefault()" onclick="addHeading()" title="Heading">
+            <button onmousedown="event.preventDefault()" onclick="addHeading()" title="Heading" aria-label="Heading">
                 <i class="fa-solid fa-heading"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addBold()" title="Bold">
+            <button onmousedown="event.preventDefault()" onclick="addBold()" title="Bold" aria-label="Bold">
                 <i class="fa-solid fa-bold"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addItalic()" title="Italic">
+            <button onmousedown="event.preventDefault()" onclick="addItalic()" title="Italic" aria-label="Italic">
                 <i class="fa-solid fa-italic"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="addList()" title="Bullet list">
+            <button onmousedown="event.preventDefault()" onclick="addList()" title="Bullet list" aria-label="Bullet list">
                 <i class="fa-solid fa-list"></i>
             </button>
-            <button onmousedown="event.preventDefault()" onclick="clearFormat()" title="Clear formatting">
+            <button onmousedown="event.preventDefault()" onclick="addBlockquote()" title="Quote" aria-label="Quote">
+                <i class="fa-solid fa-quote-left"></i>
+            </button>
+            <button onmousedown="event.preventDefault()" onclick="addLink()" title="Insert link" aria-label="Insert link">
+                <i class="fa-solid fa-link"></i>
+            </button>
+            <button onmousedown="event.preventDefault()" onclick="clearFormat()" title="Clear formatting" aria-label="Clear formatting">
                 <i class="fa-solid fa-eraser"></i>
             </button>
             <span class="toolbar-divider"></span>
-            <button onmousedown="event.preventDefault()" onclick="triggerImageUpload()" title="Insert image">
+            <button onmousedown="event.preventDefault()" onclick="triggerImageUpload()" title="Insert image" aria-label="Insert image">
                 <i class="fa-solid fa-image"></i>
             </button>
             <input type="file" id="image-upload" accept="image/*" hidden>
@@ -83,6 +92,8 @@
 
         <!-- EDITOR (WYSIWYG) -->
         <div class="article" contenteditable="true" data-placeholder="Start writing your blog..."></div>
+
+        <p class="autosave-status" id="autosaveStatus"></p>
 
     </div>
 

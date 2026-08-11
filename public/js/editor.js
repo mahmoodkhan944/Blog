@@ -3,8 +3,8 @@ requireAuth();
 
 // Tags/attributes allowed in saved article HTML — kept tight since this
 // content is rendered to every visitor of the blog.
-const ARTICLE_ALLOWED_TAGS = ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br"];
-const ARTICLE_ALLOWED_ATTR = ["src", "alt", "class"];
+const ARTICLE_ALLOWED_TAGS = ["h1", "h2", "h3", "p", "b", "strong", "i", "em", "ul", "ol", "li", "img", "br", "a", "blockquote"];
+const ARTICLE_ALLOWED_ATTR = ["src", "alt", "class", "href", "target", "rel"];
 
 let bannerPath = "";
 let editId = null;
@@ -40,6 +40,11 @@ async function init() {
     if (!canEdit) return; // already redirected away
   }
 
+  checkForAutosave();
+
+  document.querySelector(".title").addEventListener("input", scheduleAutosave);
+  document.querySelector(".article").addEventListener("input", scheduleAutosave);
+
   document.querySelector(".publish-btn").addEventListener("click", () => save("published"));
   document.querySelector(".draft-btn").addEventListener("click", () => save("draft"));
 
@@ -48,6 +53,81 @@ async function init() {
 
   const imageUpload = document.querySelector("#image-upload");
   if (imageUpload) imageUpload.addEventListener("change", handleArticleImageUpload);
+}
+
+// ===== AUTO-SAVE (local browser only — recovers from a closed tab or
+// crash, does NOT save anything to the server/Firestore) =====
+function autosaveKey() {
+  return `editor_autosave_${editId || "new"}`;
+}
+
+let autosaveTimer = null;
+
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(saveToLocal, 1500);
+}
+
+function saveToLocal() {
+  const title = document.querySelector(".title").value;
+  const articleHTML = document.querySelector(".article").innerHTML;
+  const category = document.querySelector("#categorySelect")?.value;
+
+  // Nothing worth saving yet.
+  if (!title.trim() && !document.querySelector(".article").innerText.trim()) return;
+
+  try {
+    localStorage.setItem(autosaveKey(), JSON.stringify({ title, articleHTML, category, savedAt: Date.now() }));
+    const status = document.querySelector("#autosaveStatus");
+    if (status) status.textContent = `Saved locally at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  } catch {
+    // localStorage full/unavailable — silently skip, not critical.
+  }
+}
+
+function clearAutosave() {
+  try {
+    localStorage.removeItem(autosaveKey());
+  } catch {}
+}
+
+function checkForAutosave() {
+  let saved;
+  try {
+    saved = JSON.parse(localStorage.getItem(autosaveKey()));
+  } catch {
+    saved = null;
+  }
+  if (!saved) return;
+
+  const banner = document.querySelector("#autosaveBanner");
+  if (!banner) return;
+
+  const when = new Date(saved.savedAt).toLocaleString();
+  banner.style.display = "flex";
+  banner.innerHTML = `
+    <span>We found unsaved changes from ${when}.</span>
+    <span class="autosave-banner-actions">
+      <button class="btn small accent" id="autosaveRestore">Restore</button>
+      <button class="btn small ghost" id="autosaveDiscard">Discard</button>
+    </span>
+  `;
+
+  document.querySelector("#autosaveRestore").addEventListener("click", () => {
+    document.querySelector(".title").value = saved.title || "";
+    document.querySelector(".article").innerHTML = DOMPurify.sanitize(saved.articleHTML || "", {
+      ALLOWED_TAGS: ARTICLE_ALLOWED_TAGS,
+      ALLOWED_ATTR: ARTICLE_ALLOWED_ATTR
+    });
+    const categorySelect = document.querySelector("#categorySelect");
+    if (categorySelect && saved.category) categorySelect.value = saved.category;
+    banner.style.display = "none";
+  });
+
+  document.querySelector("#autosaveDiscard").addEventListener("click", () => {
+    clearAutosave();
+    banner.style.display = "none";
+  });
 }
 
 // Returns true if the current user is allowed to edit this post
@@ -242,6 +322,37 @@ function addList() {
   document.execCommand("insertUnorderedList");
 }
 
+function addBlockquote() {
+  // Toggle: if the current block is already a quote, switch it back to
+  // a plain paragraph instead of re-applying it every time.
+  const current = (document.queryCommandValue("formatBlock") || "").toLowerCase().replace(/[<>]/g, "");
+  document.execCommand("formatBlock", false, current === "blockquote" ? "<p>" : "<blockquote>");
+}
+
+function addLink() {
+  const url = prompt("Link URL (e.g. https://example.com):");
+  if (!url) return;
+
+  // Only allow safe URL schemes — blocks javascript:/data: links that
+  // could otherwise run code when clicked.
+  const safe = /^(https?:\/\/|mailto:)/i.test(url.trim());
+  if (!safe) {
+    alert("Please enter a full URL starting with https:// (or mailto:).");
+    return;
+  }
+
+  document.execCommand("createLink", false, url.trim());
+
+  // execCommand doesn't let us set target/rel directly — find the link
+  // that was just created and add them so it opens in a new tab safely.
+  const sel = window.getSelection();
+  const anchor = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement)?.closest("a");
+  if (anchor) {
+    anchor.setAttribute("target", "_blank");
+    anchor.setAttribute("rel", "noopener noreferrer");
+  }
+}
+
 function clearFormat() {
   document.execCommand("removeFormat");
   document.execCommand("formatBlock", false, "<p>");
@@ -254,6 +365,8 @@ window.addHeading = addHeading;
 window.addBold = addBold;
 window.addItalic = addItalic;
 window.addList = addList;
+window.addBlockquote = addBlockquote;
+window.addLink = addLink;
 window.clearFormat = clearFormat;
 
 // ===== SAVE (Publish or Save Draft) =====
@@ -328,6 +441,7 @@ async function save(status) {
 
   try {
     await db.collection("blogs").doc(id).set(payload, { merge: true });
+    clearAutosave();
 
     // Best-effort — email subscribers only the first time a post goes
     // live (skips re-notifying on every later edit/typo-fix).

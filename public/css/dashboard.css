@@ -48,12 +48,83 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  position: relative;
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
 .dash-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+}
+
+.dash-select {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dash-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ===== Bulk actions bar ===== */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  background: var(--bg-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bulk-bar-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ===== Broken image checker ===== */
+.image-check-panel {
+  margin-bottom: var(--space-6);
+}
+
+.image-check-summary {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.image-check-ok {
+  margin-top: var(--space-3);
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.image-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
 }
 
 .dash-thumb {

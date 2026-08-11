@@ -10,6 +10,7 @@ let unsubscribe = null;
 let allDocs = [];
 let isAdminView = false;
 let currentPage = Math.max(1, parseInt(new URLSearchParams(location.search).get("page"), 10) || 1);
+let selectedIds = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
   auth.onAuthStateChanged(user => {
@@ -114,6 +115,9 @@ function renderPage() {
 
     container.innerHTML += `
       <div class="dash-card">
+        <label class="dash-select">
+          <input type="checkbox" class="dash-checkbox" data-id="${doc.id}" ${selectedIds.has(doc.id) ? "checked" : ""} aria-label="Select this post">
+        </label>
         <img src="${data.bannerImage}" class="dash-thumb" alt="${escapeHtml(data.title)}" loading="lazy">
         <div class="dash-body">
           <h2 class="dash-title">${escapeHtml(data.title)}</h2>
@@ -130,6 +134,14 @@ function renderPage() {
         </div>
       </div>
     `;
+  });
+
+  document.querySelectorAll(".dash-checkbox").forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) selectedIds.add(cb.dataset.id);
+      else selectedIds.delete(cb.dataset.id);
+      renderBulkBar();
+    });
   });
 
   renderPagination(totalPages);
@@ -195,11 +207,59 @@ async function deleteBlog(id) {
 
   try {
     await db.collection("blogs").doc(id).delete();
+    selectedIds.delete(id);
   } catch (err) {
     console.error(err);
     alert("Could not delete this blog. Please try again.");
   }
 }
+
+// ===== BULK SELECT / DELETE =====
+function renderBulkBar() {
+  const bar = document.querySelector("#bulkBar");
+  const countEl = document.querySelector("#bulkCount");
+  if (!bar || !countEl) return;
+
+  if (selectedIds.size === 0) {
+    bar.style.display = "none";
+    return;
+  }
+
+  bar.style.display = "flex";
+  countEl.textContent = `${selectedIds.size} selected`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelector("#bulkClear")?.addEventListener("click", () => {
+    selectedIds.clear();
+    renderBulkBar();
+    document.querySelectorAll(".dash-checkbox").forEach(cb => (cb.checked = false));
+  });
+
+  document.querySelector("#bulkDelete")?.addEventListener("click", async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    if (!confirm(`Delete ${count} selected blog${count === 1 ? "" : "s"} permanently? This can't be undone.`)) return;
+
+    const bulkDeleteBtn = document.querySelector("#bulkDelete");
+    bulkDeleteBtn.disabled = true;
+    bulkDeleteBtn.textContent = "Deleting...";
+
+    try {
+      const batch = db.batch();
+      selectedIds.forEach(id => batch.delete(db.collection("blogs").doc(id)));
+      await batch.commit();
+      selectedIds.clear();
+      renderBulkBar();
+    } catch (err) {
+      console.error(err);
+      alert("Could not delete the selected blogs. Please try again.");
+    } finally {
+      bulkDeleteBtn.disabled = false;
+      bulkDeleteBtn.textContent = "Delete selected";
+    }
+  });
+});
 
 function escapeHtml(str) {
   return String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -208,3 +268,98 @@ function escapeHtml(str) {
 window.editBlog = editBlog;
 window.deleteBlog = deleteBlog;
 window.goToPage = goToPage;
+
+// ===== BROKEN IMAGE CHECKER =====
+// Checks every post's banner + inline article images actually load.
+// Uses the Image() load/error trick — no CORS issues since we're only
+// checking whether it loads, not reading its pixels.
+function checkImageUrl(url) {
+  return new Promise(resolve => {
+    if (!url) return resolve(false);
+
+    const img = new Image();
+    const timeout = setTimeout(() => resolve(false), 8000);
+
+    img.onload = () => {
+      clearTimeout(timeout);
+      resolve(true);
+    };
+    img.onerror = () => {
+      clearTimeout(timeout);
+      resolve(false);
+    };
+    img.src = url;
+  });
+}
+
+function collectImageUrls(data) {
+  const urls = new Set();
+  if (data.bannerImage) urls.add(data.bannerImage);
+
+  if (data.article && data.contentFormat === "html") {
+    try {
+      const parsed = new DOMParser().parseFromString(data.article, "text/html");
+      parsed.querySelectorAll("img").forEach(img => {
+        const src = img.getAttribute("src");
+        if (src) urls.add(src);
+      });
+    } catch {}
+  }
+
+  return [...urls];
+}
+
+async function checkBrokenImages() {
+  const btn = document.querySelector("#checkImagesBtn");
+  const resultsEl = document.querySelector("#imageCheckResults");
+  if (!btn || !resultsEl) return;
+
+  if (allDocs.length === 0) {
+    resultsEl.innerHTML = `<p class="empty-state">No posts to check yet.</p>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Checking...";
+  resultsEl.innerHTML = "";
+
+  const checks = [];
+  allDocs.forEach(doc => {
+    const data = doc.data();
+    collectImageUrls(data).forEach(url => {
+      checks.push({ postId: doc.id, title: data.title, url });
+    });
+  });
+
+  const results = await Promise.all(
+    checks.map(c => checkImageUrl(c.url).then(ok => ({ ...c, ok })))
+  );
+
+  const brokenByPost = {};
+  results.filter(r => !r.ok).forEach(r => {
+    if (!brokenByPost[r.postId]) brokenByPost[r.postId] = { title: r.title, count: 0 };
+    brokenByPost[r.postId].count++;
+  });
+
+  btn.disabled = false;
+  btn.textContent = "🔍 Check for broken images";
+
+  const brokenPosts = Object.entries(brokenByPost);
+
+  if (brokenPosts.length === 0) {
+    resultsEl.innerHTML = `<p class="image-check-ok">✅ No broken images found — everything looks good.</p>`;
+    return;
+  }
+
+  resultsEl.innerHTML = `
+    <p class="image-check-summary">${brokenPosts.length} post${brokenPosts.length === 1 ? " has" : "s have"} broken images:</p>
+    ${brokenPosts.map(([postId, info]) => `
+      <div class="image-check-row">
+        <span>${escapeHtml(info.title)} — ${info.count} broken image${info.count === 1 ? "" : "s"}</span>
+        <a href="/editor?id=${encodeURIComponent(postId)}" class="btn small ghost">Fix</a>
+      </div>
+    `).join("")}
+  `;
+}
+
+window.checkBrokenImages = checkBrokenImages;

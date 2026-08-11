@@ -63,16 +63,25 @@ function renderStats() {
   panel.innerHTML = `
     <div class="stats-cards">
       <div class="stat-card">
-        <span class="stat-value">${published.length}</span>
-        <span class="stat-label">Published posts</span>
+        <span class="stat-icon" aria-hidden="true">📝</span>
+        <span class="stat-text">
+          <span class="stat-value">${published.length}</span>
+          <span class="stat-label">Published posts</span>
+        </span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">${totalViews}</span>
-        <span class="stat-label">Total views</span>
+        <span class="stat-icon" aria-hidden="true">👁️</span>
+        <span class="stat-text">
+          <span class="stat-value">${totalViews}</span>
+          <span class="stat-label">Total views</span>
+        </span>
       </div>
       <div class="stat-card">
-        <span class="stat-value">${totalLikes}</span>
-        <span class="stat-label">Total likes</span>
+        <span class="stat-icon" aria-hidden="true">❤️</span>
+        <span class="stat-text">
+          <span class="stat-value">${totalLikes}</span>
+          <span class="stat-label">Total likes</span>
+        </span>
       </div>
     </div>
     ${topPosts.length ? `
@@ -203,14 +212,14 @@ function editBlog(id) {
 }
 
 async function deleteBlog(id) {
-  if (!confirm("Delete this blog permanently? This can't be undone.")) return;
+  if (!(await showConfirm("Delete this blog permanently? This can't be undone."))) return;
 
   try {
     await db.collection("blogs").doc(id).delete();
     selectedIds.delete(id);
   } catch (err) {
     console.error(err);
-    alert("Could not delete this blog. Please try again.");
+    toast("Could not delete this blog. Please try again.", "error");
   }
 }
 
@@ -239,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#bulkDelete")?.addEventListener("click", async () => {
     const count = selectedIds.size;
     if (count === 0) return;
-    if (!confirm(`Delete ${count} selected blog${count === 1 ? "" : "s"} permanently? This can't be undone.`)) return;
+    if (!(await showConfirm(`Delete ${count} selected blog${count === 1 ? "" : "s"} permanently? This can't be undone.`))) return;
 
     const bulkDeleteBtn = document.querySelector("#bulkDelete");
     bulkDeleteBtn.disabled = true;
@@ -253,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderBulkBar();
     } catch (err) {
       console.error(err);
-      alert("Could not delete the selected blogs. Please try again.");
+      toast("Could not delete the selected blogs. Please try again.", "error");
     } finally {
       bulkDeleteBtn.disabled = false;
       bulkDeleteBtn.textContent = "Delete selected";

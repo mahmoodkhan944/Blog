@@ -103,7 +103,7 @@ db.collection("blogs").doc(blogId).get()
   })
   .catch(err => {
     console.error(err);
-    alert("Error loading blog");
+    toast("Error loading blog", "error");
   });
 
 // ===== PUBLISHED LINE (author · date · time) =====
@@ -244,7 +244,7 @@ function shareBlog() {
     navigator.share({ title: document.title, url: location.href }).catch(() => {});
   } else {
     navigator.clipboard?.writeText(location.href);
-    alert("Link copied to clipboard!");
+    toast("Link copied to clipboard!", "success");
   }
 }
 
@@ -295,7 +295,7 @@ async function toggleLike() {
     likeCountEl.textContent = Math.max(0, Number(likeCountEl.textContent) + delta);
   } catch (err) {
     console.error(err);
-    alert("Could not update like. Please try again.");
+    toast("Could not update like. Please try again.", "error");
   } finally {
     likeBtn.disabled = false;
   }
@@ -366,7 +366,7 @@ async function submitComment(e) {
     textEl.value = "";
   } catch (err) {
     console.error(err);
-    alert("Could not post comment. Please try again.");
+    toast("Could not post comment. Please try again.", "error");
   } finally {
     submitBtn.disabled = false;
   }
@@ -434,7 +434,7 @@ async function submitReply(e, parentId) {
     document.getElementById(`replyForm-${parentId}`).style.display = "none";
   } catch (err) {
     console.error(err);
-    alert("Could not post reply. Please try again.");
+    toast("Could not post reply. Please try again.", "error");
   } finally {
     btn.disabled = false;
   }
@@ -501,13 +501,13 @@ function renderComments(snapshot) {
 // getSortTime lives in blog-cards.js — reused here for reply ordering.
 
 async function deleteComment(commentId) {
-  if (!confirm("Delete this comment?")) return;
+  if (!(await showConfirm("Delete this comment?"))) return;
 
   try {
     await db.collection("blogs").doc(blogId).collection("comments").doc(commentId).delete();
   } catch (err) {
     console.error(err);
-    alert("Could not delete this comment. Please try again.");
+    toast("Could not delete this comment. Please try again.", "error");
   }
 }
 
@@ -527,7 +527,7 @@ async function reportComment(commentId) {
     localStorage.setItem(`reported_${commentId}`, "1");
   } catch (err) {
     console.error(err);
-    alert("Could not report this comment. Please try again.");
+    toast("Could not report this comment. Please try again.", "error");
   }
 }
 

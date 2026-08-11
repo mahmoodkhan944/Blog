@@ -145,7 +145,7 @@ function initNewsletterForm() {
       form.innerHTML = `<p class="newsletter-success">Thanks — you're subscribed! 🎉</p>`;
     } catch (err) {
       console.error(err);
-      alert("Could not subscribe right now. Please try again.");
+      toast("Could not subscribe right now. Please try again.", "error");
       btn.disabled = false;
     }
   });

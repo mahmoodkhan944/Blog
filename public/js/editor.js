@@ -137,8 +137,8 @@ async function loadForEdit(id) {
     const doc = await db.collection("blogs").doc(id).get();
 
     if (!doc.exists) {
-      alert("This blog doesn't exist.");
-      location.href = "/dashboard";
+      toast("This blog doesn't exist.", "error");
+      setTimeout(() => (location.href = "/dashboard"), 600);
       return false;
     }
 
@@ -146,8 +146,8 @@ async function loadForEdit(id) {
     const isOwner = data.authorId === currentUser.uid;
 
     if (!isOwner && !isAdmin(currentUser)) {
-      alert("You don't have permission to edit this blog.");
-      location.href = "/dashboard";
+      toast("You don't have permission to edit this blog.", "error");
+      setTimeout(() => (location.href = "/dashboard"), 600);
       return false;
     }
 
@@ -182,8 +182,8 @@ async function loadForEdit(id) {
     return true;
   } catch (err) {
     console.error(err);
-    alert("Could not load this blog for editing.");
-    location.href = "/dashboard";
+    toast("Could not load this blog for editing.", "error");
+    setTimeout(() => (location.href = "/dashboard"), 600);
     return false;
   }
 }
@@ -237,7 +237,7 @@ async function handleBannerUpload() {
   if (!file) return;
 
   if (!file.type.startsWith("image")) {
-    alert("Only image files are allowed");
+    toast("Only image files are allowed", "error");
     return;
   }
 
@@ -248,7 +248,7 @@ async function handleBannerUpload() {
     bannerPath = url;
   } catch (err) {
     console.error(err);
-    alert(err.message || "Banner upload failed. Please try again.");
+    toast(err.message || "Banner upload failed. Please try again.", "error");
   }
 }
 
@@ -259,7 +259,7 @@ async function handleArticleImageUpload() {
   if (!file) return;
 
   if (!file.type.startsWith("image")) {
-    alert("Only image files are allowed");
+    toast("Only image files are allowed", "error");
     return;
   }
 
@@ -268,7 +268,7 @@ async function handleArticleImageUpload() {
     insertImage(url, file.name);
   } catch (err) {
     console.error(err);
-    alert(err.message || "Image upload failed. Please try again.");
+    toast(err.message || "Image upload failed. Please try again.", "error");
   }
 }
 
@@ -337,7 +337,7 @@ function addLink() {
   // could otherwise run code when clicked.
   const safe = /^(https?:\/\/|mailto:)/i.test(url.trim());
   if (!safe) {
-    alert("Please enter a full URL starting with https:// (or mailto:).");
+    toast("Please enter a full URL starting with https:// (or mailto:).", "error");
     return;
   }
 
@@ -381,11 +381,11 @@ async function save(status) {
   // Drafts can be saved with less complete content — full validation
   // only applies when actually publishing.
   if (status === "published") {
-    if (!title || title.length < 5) return alert("Title too short");
-    if (!articleText || articleText.length < 20) return alert("Write proper content");
-    if (!bannerPath) return alert("Upload a banner image");
+    if (!title || title.length < 5) return toast("Title too short", "error");
+    if (!articleText || articleText.length < 20) return toast("Write proper content", "error");
+    if (!bannerPath) return toast("Upload a banner image", "error");
   } else if (!title) {
-    return alert("Give your draft at least a title so you can find it again.");
+    return toast("Give your draft at least a title so you can find it again.", "error");
   }
 
   const articleHTML = DOMPurify.sanitize(articleField.innerHTML, {
@@ -454,15 +454,15 @@ async function save(status) {
     }
 
     if (status === "draft") {
-      alert("Saved as draft 📝");
-      location.href = "/dashboard";
+      toast("Saved as draft 📝", "success");
+      setTimeout(() => (location.href = "/dashboard"), 600);
     } else {
-      alert(editId ? "Updated ✅" : "Published ✅");
-      location.href = "/" + id;
+      toast(editId ? "Updated ✅" : "Published ✅", "success");
+      setTimeout(() => (location.href = "/" + id), 600);
     }
   } catch (err) {
     console.error(err);
-    alert("Something went wrong. Please try again.");
+    toast("Something went wrong. Please try again.", "error");
     publishBtn.disabled = false;
     draftBtn.disabled = false;
     clickedBtn.textContent = originalLabel;

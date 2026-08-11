@@ -85,6 +85,11 @@ db.collection("blogs").doc(blogId).get()
     // (4-across on desktop, 2-across on mobile — see .article-image-grid)
     groupArticleImages(articleEl);
 
+    // ===== TABLE OF CONTENTS =====
+    // Only worth showing for longer posts with a few headings — skip it
+    // entirely for short articles where it wouldn't add anything.
+    buildTableOfContents();
+
     // ===== INCREASE VIEW COUNT (best effort, non-blocking) =====
     db.collection("blogs").doc(blogId).update({
       views: firebase.firestore.FieldValue.increment(1)
@@ -596,4 +601,33 @@ function scrollRelated(direction) {
   const amount = card ? card.getBoundingClientRect().width + gap : 300;
 
   track.scrollBy({ left: amount * direction, behavior: "smooth" });
+}
+
+// ===== TABLE OF CONTENTS =====
+function buildTableOfContents() {
+  const toc = document.getElementById("toc");
+  const tocList = document.getElementById("tocList");
+  if (!toc || !tocList) return;
+
+  const headings = articleEl.querySelectorAll("h1, h2, h3");
+  if (headings.length < 3) return; // not worth it for short posts
+
+  const items = [];
+
+  headings.forEach((h, i) => {
+    const id = `heading-${i}`;
+    h.id = id;
+    items.push(`
+      <li class="${h.tagName === "H3" ? "toc-h3" : ""}">
+        <a href="#${id}">${escapeHtml(h.textContent)}</a>
+      </li>
+    `);
+  });
+
+  tocList.innerHTML = items.join("");
+  toc.style.display = "block";
+
+  document.getElementById("tocToggle").addEventListener("click", () => {
+    toc.classList.toggle("collapsed");
+  });
 }

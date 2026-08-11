@@ -41,6 +41,15 @@
     <div class="blog">
         <h1 class="title"></h1>
         <p class="published"></p>
+
+        <nav class="toc" id="toc" style="display:none">
+            <button class="toc-toggle" id="tocToggle" aria-expanded="true">
+                <span>Contents</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <ul class="toc-list" id="tocList"></ul>
+        </nav>
+
         <div class="article"></div>
 
         <div class="share-actions">
@@ -69,6 +78,10 @@
         </div>
     </section>
 
+    <div id="footer-root"></div>
+
+    <button class="back-to-top" id="backToTop" aria-label="Back to top" style="display:none">↑</button>
+
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
@@ -77,9 +90,11 @@
     <script src="/js/auth.js"></script>
     <script src="/js/config.js"></script>
     <script src="/js/theme.js"></script>
+    <script src="/js/back-to-top.js"></script>
     <script src="/js/toast.js"></script>
     <script src="/js/pwa.js"></script>
     <script src="/js/nav.js"></script>
+    <script src="/js/footer.js"></script>
     <script src="/js/blog-cards.js"></script>
     <script src="/js/blog.js"></script>
 

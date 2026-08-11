@@ -37,6 +37,138 @@ html {
   outline: none;
 }
 
+/* ===== Back to top ===== */
+.back-to-top {
+  position: fixed;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--shadow-md);
+  z-index: 500;
+  transition: transform var(--transition), background var(--transition);
+}
+
+.back-to-top:hover {
+  transform: translateY(-3px);
+  background: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .back-to-top {
+    bottom: var(--space-4);
+    right: var(--space-4);
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ===== Footer ===== */
+/* Fixed dark color (not the --ink variable) — the footer should always
+   stay dark regardless of light/dark site theme, since its white text
+   is designed specifically for a dark backdrop. */
+.site-footer {
+  background: #161514;
+  padding: var(--space-8) 5vw var(--space-6);
+  margin-top: var(--space-9);
+}
+
+.footer-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footer-brand {
+  max-width: 320px;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.footer-logo-accent {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.footer-brand p {
+  margin-top: var(--space-3);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color var(--transition);
+  position: relative;
+}
+
+.footer-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width var(--transition);
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+.footer-links a:hover::after {
+  width: 100%;
+}
+
+.footer-copy {
+  max-width: var(--max-w);
+  margin: var(--space-5) auto 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .footer-inner {
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .footer-links {
+    gap: var(--space-3) var(--space-5);
+  }
+}
+
 /* ===== Toast notifications ===== */
 .toast-container {
   position: fixed;

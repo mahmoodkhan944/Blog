@@ -16,6 +16,7 @@
     <meta name="theme-color" content="#D96C4A">
     <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/img/icon.svg">
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS Feed" href="/feed.xml">
     <title>Blog : Homepage</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -85,6 +86,10 @@
         </div>
     </section>
 
+    <div id="footer-root"></div>
+
+    <button class="back-to-top" id="backToTop" aria-label="Back to top" style="display:none">↑</button>
+
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
@@ -92,9 +97,11 @@
     <script src="/js/firebase.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/theme.js"></script>
+    <script src="/js/back-to-top.js"></script>
     <script src="/js/toast.js"></script>
     <script src="/js/pwa.js"></script>
     <script src="/js/nav.js"></script>
+    <script src="/js/footer.js"></script>
     <script src="/js/blog-cards.js"></script>
     <script src="/js/home.js"></script>
 

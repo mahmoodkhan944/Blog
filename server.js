@@ -353,6 +353,8 @@ app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public/da
 app.get("/editor", (req, res) => res.sendFile(path.join(__dirname, "public/editor.html")));
 app.get("/blogs", (req, res) => res.sendFile(path.join(__dirname, "public/blogs.html")));
 app.get("/author/:uid", (req, res) => res.sendFile(path.join(__dirname, "public/author.html")));
+app.get("/about", (req, res) => res.sendFile(path.join(__dirname, "public/about.html")));
+app.get("/contact", (req, res) => res.sendFile(path.join(__dirname, "public/contact.html")));
 
 app.get("/robots.txt", (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
@@ -381,6 +383,88 @@ app.get("/sitemap.xml", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Could not generate sitemap");
+  }
+});
+
+// ===== RSS FEED =====
+// Lists the most recent published posts. Fetches full document data
+// (not just ids, unlike sitemap) since RSS entries need title/date/link.
+function fetchRecentBlogs(limit) {
+  return new Promise(resolve => {
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/blogs?pageSize=300`;
+
+    https
+      .get(url, res => {
+        let body = "";
+        res.on("data", chunk => (body += chunk));
+        res.on("end", () => {
+          try {
+            const json = JSON.parse(body);
+            const docs = json.documents || [];
+            const items = docs
+              .map(d => ({ id: d.name.split("/").pop(), ...parseFirestoreFields(d.fields) }))
+              .filter(d => d.status !== "draft" && d.title);
+            resolve(items);
+          } catch {
+            resolve([]);
+          }
+        });
+      })
+      .on("error", () => resolve([]));
+  });
+}
+
+function rssEscape(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+app.get("/feed.xml", async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  try {
+    const items = await fetchRecentBlogs();
+
+    // No createdAt available via this lightweight fetch — publishedAt
+    // (a display string) is good enough to sort a feed by, newest first.
+    items.sort((a, b) => {
+      const parsedA = Date.parse(a.publishedAt);
+      const parsedB = Date.parse(b.publishedAt);
+      return (Number.isNaN(parsedB) ? 0 : parsedB) - (Number.isNaN(parsedA) ? 0 : parsedA);
+    });
+
+    const entries = items.slice(0, 30).map(item => {
+      const link = `${baseUrl}/${item.id}`;
+      const pubDate = (() => {
+        const parsed = new Date(item.publishedAt);
+        return Number.isNaN(parsed.getTime()) ? new Date().toUTCString() : parsed.toUTCString();
+      })();
+
+      return `
+    <item>
+      <title>${rssEscape(item.title)}</title>
+      <link>${link}</link>
+      <guid>${link}</guid>
+      <description>${rssEscape(stripHtmlTags(item.article).slice(0, 300))}</description>
+      <pubDate>${pubDate}</pubDate>
+    </item>`;
+    }).join("");
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Blog — Real stories, written by people</title>
+    <link>${baseUrl}</link>
+    <description>Real stories and ideas, written by people — not algorithms.</description>${entries}
+  </channel>
+</rss>`;
+
+    res.type("application/rss+xml").send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Could not generate RSS feed");
   }
 });
 

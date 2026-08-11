@@ -89,6 +89,69 @@
   font-style: normal;
 }
 
+/* ===== Table of contents ===== */
+.toc {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-7);
+  overflow: hidden;
+}
+
+.toc-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.toc-toggle i {
+  font-size: 12px;
+  color: var(--ink-faint);
+  transition: transform var(--transition);
+}
+
+.toc.collapsed .toc-toggle i {
+  transform: rotate(-90deg);
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0 var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toc.collapsed .toc-list {
+  display: none;
+}
+
+.toc-list li a {
+  display: block;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: color var(--transition);
+}
+
+.toc-list li a:hover {
+  color: var(--accent-dark);
+}
+
+.toc-list .toc-h3 {
+  padding-inline-start: var(--space-4);
+  font-size: 13px;
+}
+
 .article {
   font-size: 18px;
   line-height: 1.85;

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog : Page Not Found</title>
+
     <script>
       (function () {
         if (localStorage.getItem("theme") === "dark") {
@@ -9,32 +14,26 @@
       })();
     </script>
 
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog : All Blogs</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:ital,wght@0,400;0,500;0,600;1,600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/notfound.css">
 </head>
 <body>
 
     <div id="navbar-root"></div>
 
-    <div class="section-heading no-hero">
-        <h2>All blogs</h2>
-        <p>Everything published so far.</p>
+    <div class="notfound-wrap">
+        <span class="notfound-code">404</span>
+        <h1>This page went missing</h1>
+        <p>The post or page you're looking for doesn't exist — it may have been removed, or the link might be off.</p>
+        <div class="notfound-actions">
+            <a href="/" class="btn accent">Back to home</a>
+            <a href="/blogs" class="btn ghost">Browse all blogs</a>
+        </div>
     </div>
-
-    <section class="blogs-section">
-        <p class="empty-state">Loading blogs...</p>
-    </section>
-
-    <nav class="pagination" id="pagination"></nav>
 
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
@@ -43,10 +42,8 @@
 
     <script src="js/firebase.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/theme.js"></script>
     <script src="js/nav.js"></script>
-    <script src="js/blog-cards.js"></script>
-    <script src="js/blogs.js"></script>
+    <script>renderNav(null);</script>
 
 </body>
 </html>

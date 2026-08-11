@@ -89,7 +89,24 @@ function buildPublishedLine(data) {
   if (data.publishedTime) when += ` at ${data.publishedTime}`;
   if (when) parts.push(when);
 
+  const readingTime = estimateReadingTime(data.article);
+  if (readingTime) parts.push(readingTime);
+
   return parts.length ? parts.join(" &nbsp;·&nbsp; ") : "";
+}
+
+// Rough estimate at ~200 words/minute, based on the plain text content
+// (strips HTML tags for HTML-format posts; legacy posts are plain text
+// already).
+function estimateReadingTime(article) {
+  if (!article) return "";
+
+  const text = article.includes("<") ? htmlToTextShared(article) : article;
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  if (words === 0) return "";
+
+  const minutes = Math.max(1, Math.round(words / 200));
+  return `${minutes} min read`;
 }
 
 function escapeHtml(str) {

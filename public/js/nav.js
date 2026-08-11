@@ -16,29 +16,35 @@ function renderNav(activePage, options = {}) {
         <img src="/img/logo.png" class="logo" alt="Blog logo">
       </a>
 
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="nav-right">
+        <button class="theme-toggle" id="themeToggle" aria-label="Switch theme" onclick="toggleTheme()"></button>
 
-      <ul class="links-container" id="navLinks">
-        <li class="link-item">
-          <a href="/" class="link ${activePage === "home" ? "active" : ""}">Home</a>
-        </li>
-        <li class="link-item">
-          <a href="/editor" class="link ${activePage === "editor" ? "active" : ""}">Write</a>
-        </li>
-        <li class="link-item auth-only" style="display:none">
-          <a href="/dashboard" class="link ${activePage === "dashboard" ? "active" : ""}">Dashboard</a>
-        </li>
-        <li class="link-item auth-only" style="display:none">
-          <a href="#" class="link" id="logoutBtn">Logout</a>
-        </li>
-        <li class="link-item guest-only">
-          <a href="/login" class="link ${activePage === "login" ? "active" : ""}">Login</a>
-        </li>
-      </ul>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <ul class="links-container" id="navLinks">
+          <li class="link-item">
+            <a href="/" class="link ${activePage === "home" ? "active" : ""}">Home</a>
+          </li>
+          <li class="link-item">
+            <a href="/editor" class="link ${activePage === "editor" ? "active" : ""}">Write</a>
+          </li>
+          <li class="link-item auth-only" style="display:none">
+            <a href="/dashboard" class="link ${activePage === "dashboard" ? "active" : ""}">Dashboard</a>
+          </li>
+          <li class="link-item auth-only" style="display:none">
+            <a href="#" class="link" id="logoutBtn">Logout</a>
+          </li>
+          <li class="link-item guest-only">
+            <a href="/login" class="link ${activePage === "login" ? "active" : ""}">Login</a>
+          </li>
+        </ul>
+      </div>
     </nav>
   `;
+
+  updateThemeToggleIcon();
 
   const toggle = document.getElementById("navToggle");
   const links = document.getElementById("navLinks");

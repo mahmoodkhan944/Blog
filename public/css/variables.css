@@ -53,3 +53,30 @@
   --nav-h: 72px;
   --transition: 0.2s ease;
 }
+
+/* ============================================
+   DARK MODE
+   Applied when <html data-theme="dark"> is set (see js/theme.js).
+   Only the color tokens change — spacing/radius/typography stay the same.
+   ============================================ */
+:root[data-theme="dark"] {
+  --bg: #171615;
+  --bg-alt: #201F1D;
+  --bg-soft: #2A2825;
+  --ink: #F2EFE9;
+  --ink-soft: rgba(242, 239, 233, 0.72);
+  --ink-faint: rgba(242, 239, 233, 0.48);
+  --border: rgba(242, 239, 233, 0.1);
+  --border-strong: rgba(242, 239, 233, 0.18);
+
+  --accent: #E58462;
+  --accent-dark: #F0A184;
+  --accent-soft: rgba(229, 132, 98, 0.16);
+
+  --danger: #E4685F;
+  --danger-soft: rgba(228, 104, 95, 0.14);
+
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.45);
+}

@@ -205,6 +205,14 @@ function openBannerUpload() {
   document.getElementById("banner-upload").click();
 }
 
+function undoEdit() {
+  document.execCommand("undo");
+}
+
+function redoEdit() {
+  document.execCommand("redo");
+}
+
 function addHeading() {
   // Toggle: if the current block is already a heading, switch it back
   // to a plain paragraph instead of just re-applying <h2> every time.
@@ -231,6 +239,8 @@ function clearFormat() {
 }
 
 window.openBannerUpload = openBannerUpload;
+window.undoEdit = undoEdit;
+window.redoEdit = redoEdit;
 window.addHeading = addHeading;
 window.addBold = addBold;
 window.addItalic = addItalic;

@@ -11,7 +11,15 @@ const FIREBASE_PROJECT_ID = "blogging-website-12a92";
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// ===== SHARE PREVIEWS (Open Graph / Twitter Card meta tags) =====
+// Apps like WhatsApp, Facebook, and Twitter/X read link previews by
+// fetching the raw HTML — they do NOT run JavaScript. Since blog content
+// normally loads client-side from Firestore, we fetch it here on the
+// server and inject the right <meta> tags before sending the page, so
+// share previews show the actual blog banner/title instead of nothing.
 
+// Reads a public Firestore document over its REST API (no credentials
+// needed since our security rules already allow public reads on /blogs).
 function fetchBlogDoc(id) {
   return new Promise(resolve => {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/blogs/${encodeURIComponent(id)}`;
@@ -33,7 +41,8 @@ function fetchBlogDoc(id) {
   });
 }
 
-
+// Firestore's REST API wraps every field like { stringValue: "..." } —
+// unwrap the ones we actually need for meta tags.
 function parseFirestoreFields(fields) {
   const data = {};
   for (const key in fields) {
@@ -53,7 +62,8 @@ function escapeAttr(str) {
   return String(str || "").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
-
+// Inserts Open Graph / Twitter Card tags into an HTML string's <head>,
+// and overwrites <title> if a title is given.
 function injectMetaTags(html, { title, description, image, url }) {
   const tags = `
     <meta name="description" content="${escapeAttr(description)}">
@@ -83,7 +93,37 @@ function absoluteUrl(req, maybeRelativePath) {
   return maybeRelativePath.startsWith("/") ? `${base}${maybeRelativePath}` : maybeRelativePath;
 }
 
+// ===== SITEMAP / ROBOTS =====
+// Lists every published blog's id via Firestore's REST API (same
+// no-credentials-needed approach as fetchBlogDoc above), for search
+// engines. Capped at 300 posts — fine for now; if the blog grows past
+// that, this would need to page through results with a pageToken.
+function fetchAllBlogIds() {
+  return new Promise(resolve => {
+    const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/blogs?pageSize=300&mask.fieldPaths=title`;
 
+    https
+      .get(url, res => {
+        let body = "";
+        res.on("data", chunk => (body += chunk));
+        res.on("end", () => {
+          try {
+            const json = JSON.parse(body);
+            const docs = json.documents || [];
+            resolve(docs.map(d => d.name.split("/").pop()));
+          } catch {
+            resolve([]);
+          }
+        });
+      })
+      .on("error", () => resolve([]));
+  });
+}
+
+// ===== PAGES (explicit routes first, catch-all last) =====
+
+// Homepage — static content, but the preview image/title still need to
+// be absolute URLs based on whatever domain is actually serving the site.
 app.get("/", (req, res) => {
   try {
     const html = fs.readFileSync(path.join(__dirname, "public/home.html"), "utf-8");
@@ -108,16 +148,50 @@ app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public/da
 app.get("/editor", (req, res) => res.sendFile(path.join(__dirname, "public/editor.html")));
 app.get("/blogs", (req, res) => res.sendFile(path.join(__dirname, "public/blogs.html")));
 
+app.get("/robots.txt", (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  res.type("text/plain").send(`User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`);
+});
 
+app.get("/sitemap.xml", async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  try {
+    const ids = await fetchAllBlogIds();
+
+    const urls = [
+      { loc: `${baseUrl}/`, priority: "1.0" },
+      { loc: `${baseUrl}/blogs`, priority: "0.8" },
+      ...ids.map(id => ({ loc: `${baseUrl}/${id}`, priority: "0.7" }))
+    ];
+
+    const xml =
+      `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+      urls.map(u => `  <url>\n    <loc>${u.loc}</loc>\n    <priority>${u.priority}</priority>\n  </url>`).join("\n") +
+      `\n</urlset>`;
+
+    res.type("application/xml").send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Could not generate sitemap");
+  }
+});
+
+// Any other path is treated as a blog post slug — fetch that post's
+// title/banner/excerpt from Firestore and inject them as share preview
+// meta tags before sending the page. If it doesn't exist, serve a real
+// 404 page with a 404 status (not just a redirect), which is also what
+// search engines expect for a missing page.
 app.get("/:id", async (req, res) => {
-  const html = fs.readFileSync(path.join(__dirname, "public/blog.html"), "utf-8");
-
   try {
     const data = await fetchBlogDoc(req.params.id);
 
     if (!data) {
-      return res.send(html); // unknown id — client-side JS will redirect home
+      return res.status(404).sendFile(path.join(__dirname, "public/404.html"));
     }
+
+    const html = fs.readFileSync(path.join(__dirname, "public/blog.html"), "utf-8");
 
     const injected = injectMetaTags(html, {
       title: data.title ? `Blog : ${data.title}` : "Blog",
@@ -129,13 +203,15 @@ app.get("/:id", async (req, res) => {
     res.send(injected);
   } catch (err) {
     console.error(err);
-    res.send(html);
+    res.sendFile(path.join(__dirname, "public/blog.html"));
   }
 });
 
 const PORT = process.env.PORT || 3000;
 
-
+// Only bind to a port when run directly (`node server.js`, local dev).
+// On Vercel, this file is imported as a serverless function instead —
+// module.exports below is what actually gets used there.
 if (require.main === module) {
   app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }

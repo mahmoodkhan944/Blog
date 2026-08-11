@@ -37,21 +37,6 @@
   flex-shrink: 0;
 }
 
-.upload-btn {
-  background: var(--bg-soft);
-  color: var(--ink);
-  padding: 12px 20px;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background var(--transition);
-}
-
-.upload-btn:hover {
-  background: var(--border-strong);
-}
-
 /* Banner */
 .banner {
   width: 100%;
@@ -109,9 +94,12 @@
   border-radius: var(--radius-pill);
 }
 
-/* Toolbar */
+/* Toolbar — sticky so it's always reachable while writing/scrolling,
+   without needing to jump back to the top of the page (especially
+   important on mobile, where the article can get long). */
 .toolbar {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
   background: var(--bg-alt);
   padding: var(--space-2);
@@ -119,6 +107,16 @@
   box-shadow: var(--shadow-sm);
   width: fit-content;
   margin-bottom: var(--space-4);
+  position: sticky;
+  top: calc(var(--nav-h) + var(--space-3));
+  z-index: 20;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border-strong);
+  margin: 0 2px;
 }
 
 .toolbar button {
@@ -230,8 +228,7 @@
     width: 100%;
   }
 
-  .publish-btn,
-  .upload-btn {
+  .publish-btn {
     flex: 1;
     text-align: center;
   }
@@ -262,11 +259,6 @@
 
   .editor-header .title {
     font-size: 20px;
-  }
-
-  .upload-btn {
-    padding: 10px 14px;
-    font-size: 13px;
   }
 
   .banner span {

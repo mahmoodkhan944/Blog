@@ -137,6 +137,57 @@
   align-self: flex-start;
 }
 
+/* ===== Invite strip — "anyone can write here" call-to-action ===== */
+.invite-strip {
+  max-width: var(--max-w);
+  margin: var(--space-8) auto 0;
+  padding: 0 5vw;
+}
+
+.invite-content {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+}
+
+.invite-text {
+  color: #fff;
+}
+
+.invite-text .eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.invite-text h3 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.invite-text p {
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+.invite-content > .btn {
+  background: #fff;
+  color: var(--accent-dark);
+  flex-shrink: 0;
+}
+
+.invite-content > .btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
 /* ===== Blog grid ===== */
 .section-heading {
   max-width: var(--max-w);
@@ -161,14 +212,14 @@
   width: 100%;
   padding: var(--space-6) 5vw var(--space-9);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--space-5);
 }
 
 .blog-card {
   background: var(--bg-alt);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);
 }
@@ -181,13 +232,13 @@
 .blog-image-wrap {
   display: block;
   overflow: hidden;
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-4);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
 }
 
 .blog-image {
   width: 100%;
-  height: 220px;
+  height: 150px;
   object-fit: cover;
   display: block;
   transition: transform 0.4s ease;
@@ -199,11 +250,11 @@
 
 .blog-title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
   padding: 0 var(--space-2);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .blog-title a {
@@ -212,18 +263,18 @@
 
 .blog-meta {
   padding: 0 var(--space-2);
-  margin-bottom: var(--space-3);
-  font-size: 12px;
+  margin-bottom: var(--space-2);
+  font-size: 11px;
   font-style: italic;
   color: var(--ink-faint);
 }
 
 .blog-overview {
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-3);
   padding: 0 var(--space-2);
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 12.5px;
 }
 
 .blog-card .btn {
@@ -240,6 +291,56 @@
    sits right below the fixed navbar instead of assuming hero spacing. */
 .section-heading.no-hero {
   padding-top: calc(var(--nav-h) + var(--space-6));
+}
+
+/* ===== Pagination (used on /blogs) ===== */
+.pagination {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 5vw var(--space-9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.page-btn,
+.page-arrow {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-alt);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition);
+}
+
+.page-btn:hover,
+.page-arrow:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  transform: translateY(-2px);
+}
+
+.page-btn.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.page-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  color: var(--ink-faint);
+  padding: 0 var(--space-1);
 }
 
 @media (max-width: 768px) {
@@ -276,7 +377,18 @@
   }
 
   .blog-image {
-    height: 190px;
+    height: 150px;
+  }
+
+  .invite-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .invite-content > .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -334,6 +446,14 @@
   .blogs-section {
     padding-left: 4vw;
     padding-right: 4vw;
+  }
+
+  .invite-strip {
+    padding: 0 4vw;
+  }
+
+  .invite-text h3 {
+    font-size: 21px;
   }
 }
 

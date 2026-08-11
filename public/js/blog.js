@@ -63,6 +63,9 @@ db.collection("blogs").doc(blogId).get()
     // ===== COMMENTS =====
     initComments();
 
+    // ===== RELATED BLOGS =====
+    loadRelatedBlogs();
+
     // ===== WHATSAPP SHARE =====
     const wa = document.getElementById("waShare");
     if (wa) {
@@ -375,4 +378,56 @@ window.deleteComment = deleteComment;
 
 function formatCommentDate(date) {
   return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+// ===== RELATED BLOGS ("You may also like") =====
+function loadRelatedBlogs() {
+  const wrap = document.getElementById("relatedSection");
+  if (!wrap) return;
+
+  db.collection("blogs").get()
+    .then(res => {
+      const picks = sortDocsByRecency(res.docs)
+        .filter(doc => doc.id !== blogId)
+        .slice(0, 8);
+
+      if (picks.length === 0) return; // nothing else published yet
+
+      wrap.innerHTML = `
+        <div class="related-heading">
+          <div>
+            <span class="eyebrow">Keep reading</span>
+            <h3>You may also like</h3>
+          </div>
+          <div class="related-nav">
+            <button class="related-arrow" id="relatedPrev" aria-label="Previous">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button class="related-arrow" id="relatedNext" aria-label="Next">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="related-track" id="relatedTrack">
+          ${picks.map(doc => blogCardHTML(doc.id, doc.data())).join("")}
+        </div>
+      `;
+
+      document.getElementById("relatedPrev").addEventListener("click", () => scrollRelated(-1));
+      document.getElementById("relatedNext").addEventListener("click", () => scrollRelated(1));
+
+      observeReveals();
+    })
+    .catch(err => console.error(err));
+}
+
+function scrollRelated(direction) {
+  const track = document.getElementById("relatedTrack");
+  if (!track) return;
+
+  const card = track.querySelector(".blog-card");
+  const gap = 20; // matches .related-track gap
+  const amount = card ? card.getBoundingClientRect().width + gap : 300;
+
+  track.scrollBy({ left: amount * direction, behavior: "smooth" });
 }

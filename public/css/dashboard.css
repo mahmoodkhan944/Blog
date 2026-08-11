@@ -34,6 +34,15 @@
   gap: var(--space-5);
 }
 
+/* .pagination (from home.css) already has its own max-width/padding —
+   this container is already inside .dashboard's padded max-width, so
+   avoid doubling that up. */
+.dashboard .pagination {
+  max-width: none;
+  padding: var(--space-6) 0 0;
+  margin: 0;
+}
+
 .dash-card {
   background: var(--bg-alt);
   border-radius: var(--radius-lg);

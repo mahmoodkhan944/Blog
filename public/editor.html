@@ -25,10 +25,6 @@
             <input type="text" class="title" placeholder="Enter blog title..." />
             <div class="actions">
                 <button class="publish-btn btn accent">Publish</button>
-                <label class="upload-btn">
-                    Upload Image
-                    <input type="file" id="image-upload" accept="image/*" hidden>
-                </label>
             </div>
         </div>
 
@@ -40,7 +36,7 @@
             <input type="file" id="banner-upload" accept="image/*" hidden>
         </div>
 
-        <!-- TOOLBAR -->
+        <!-- TOOLBAR (sticky — stays reachable while scrolling/writing) -->
         <div class="toolbar">
             <button onmousedown="event.preventDefault()" onclick="addHeading()" title="Heading">
                 <i class="fa-solid fa-heading"></i>
@@ -57,6 +53,11 @@
             <button onmousedown="event.preventDefault()" onclick="clearFormat()" title="Clear formatting">
                 <i class="fa-solid fa-eraser"></i>
             </button>
+            <span class="toolbar-divider"></span>
+            <button onmousedown="event.preventDefault()" onclick="triggerImageUpload()" title="Insert image">
+                <i class="fa-solid fa-image"></i>
+            </button>
+            <input type="file" id="image-upload" accept="image/*" hidden>
         </div>
 
         <!-- EDITOR (WYSIWYG) -->

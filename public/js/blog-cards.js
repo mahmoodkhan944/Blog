@@ -10,8 +10,8 @@ function blogCardHTML(id, data) {
       </a>
       <h2 class="blog-title"><a href="/${id}">${escapeHtmlShared(data.title)}</a></h2>
       <p class="blog-meta">${buildCardMeta(data)}</p>
-      <p class="blog-overview">${escapeHtmlShared(htmlToTextShared(data.article).substring(0, 110))}...</p>
-      <a href="/${id}" class="btn dark">Read</a>
+      <p class="blog-overview">${escapeHtmlShared(htmlToTextShared(data.article).substring(0, 80))}...</p>
+      <a href="/${id}" class="btn dark small">Read</a>
     </article>
   `;
 }

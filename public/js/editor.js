@@ -10,8 +10,8 @@ let bannerPath = "";
 let editId = null;
 let currentUser = null;
 let initialized = false;
-let savedRange = null;
 let existingData = null;
+let savedImageRange = null; // only used to survive the file-picker dialog
 
 document.addEventListener("DOMContentLoaded", () => {
   document.execCommand("defaultParagraphSeparator", false, "p");
@@ -34,8 +34,6 @@ async function init() {
   }
 
   const articleField = document.querySelector(".article");
-  articleField.addEventListener("mouseup", saveSelection);
-  articleField.addEventListener("keyup", saveSelection);
 
   document.querySelector(".publish-btn").addEventListener("click", publish);
 
@@ -101,24 +99,33 @@ async function loadForEdit(id) {
   }
 }
 
-// ===== SELECTION HANDLING (so toolbar/image-upload clicks don't lose
-// the cursor position inside the contenteditable article) =====
-function saveSelection() {
-  const sel = window.getSelection();
+// ===== SELECTION HANDLING =====
+// Toolbar buttons use onmousedown="event.preventDefault()" (see
+// editor.html), which stops them from ever stealing focus/selection away
+// from the article — so bold/italic/heading/list/clear just act on
+// whatever is currently selected, no manual save/restore needed.
+//
+// The ONE place selection genuinely needs to survive a focus change is
+// opening the native file-picker dialog for inline images — so we
+// capture it fresh right before that, and restore it right before
+// inserting the image.
+function captureImageInsertPoint() {
   const articleField = document.querySelector(".article");
+  const sel = window.getSelection();
+
   if (sel.rangeCount > 0 && articleField.contains(sel.anchorNode)) {
-    savedRange = sel.getRangeAt(0).cloneRange();
+    savedImageRange = sel.getRangeAt(0).cloneRange();
+  } else {
+    savedImageRange = null;
   }
 }
 
-function restoreSelection() {
-  const articleField = document.querySelector(".article");
-  articleField.focus();
-  if (!savedRange) return;
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(savedRange);
+function triggerImageUpload() {
+  captureImageInsertPoint();
+  document.getElementById("image-upload").click();
 }
+
+window.triggerImageUpload = triggerImageUpload;
 
 // ===== BANNER UPLOAD =====
 function setBannerImage(banner, url) {
@@ -177,38 +184,48 @@ async function handleArticleImageUpload() {
 }
 
 function insertImage(url, alt) {
-  restoreSelection();
+  const articleField = document.querySelector(".article");
+  articleField.focus();
+
+  if (savedImageRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedImageRange);
+  }
+
   const safeAlt = String(alt).replace(/"/g, "&quot;");
   document.execCommand("insertHTML", false, `<img src="${url}" alt="${safeAlt}" class="article-image">`);
 }
 
 // ===== TOOLBAR (WYSIWYG) =====
+// These act on whatever is currently selected in the article — the
+// buttons' onmousedown="event.preventDefault()" (see editor.html) is
+// what keeps that selection intact when a button is clicked.
 function openBannerUpload() {
   document.getElementById("banner-upload").click();
 }
 
 function addHeading() {
-  restoreSelection();
-  document.execCommand("formatBlock", false, "<h2>");
+  // Toggle: if the current block is already a heading, switch it back
+  // to a plain paragraph instead of just re-applying <h2> every time.
+  const current = (document.queryCommandValue("formatBlock") || "").toLowerCase().replace(/[<>]/g, "");
+  const isHeading = /^h[1-6]$/.test(current);
+  document.execCommand("formatBlock", false, isHeading ? "<p>" : "<h2>");
 }
 
 function addBold() {
-  restoreSelection();
   document.execCommand("bold");
 }
 
 function addItalic() {
-  restoreSelection();
   document.execCommand("italic");
 }
 
 function addList() {
-  restoreSelection();
   document.execCommand("insertUnorderedList");
 }
 
 function clearFormat() {
-  restoreSelection();
   document.execCommand("removeFormat");
   document.execCommand("formatBlock", false, "<p>");
 }

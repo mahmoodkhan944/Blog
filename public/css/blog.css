@@ -723,4 +723,22 @@
   .related-track .blog-card {
     flex-basis: 190px;
   }
+
+  .breadcrumbs {
+    font-size: 12px;
+    margin-bottom: var(--space-3);
+  }
+
+  .toc-toggle {
+    padding: var(--space-2) var(--space-3);
+    font-size: 13px;
+  }
+
+  .toc-list {
+    padding: 0 var(--space-3) var(--space-3);
+  }
+
+  .toc-list li a {
+    font-size: 13px;
+  }
 }

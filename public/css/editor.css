@@ -329,12 +329,9 @@
     width: 100%;
   }
 
-  .publish-btn {
-    flex: 1;
-    text-align: center;
-  }
-
-  .draft-btn {
+  .publish-btn,
+  .draft-btn,
+  #scheduleToggle {
     flex: 1;
     text-align: center;
   }
@@ -345,11 +342,22 @@
 
   .toolbar {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .toolbar button {
+    flex: 1 1 auto;
+    min-width: 34px;
+  }
+
+  .schedule-panel {
+    width: 100%;
+  }
+
+  .schedule-panel input[type="datetime-local"] {
     flex: 1;
+    min-width: 0;
   }
 
   .article {
@@ -376,6 +384,15 @@
     width: auto;
     min-width: 32px;
     height: 34px;
+  }
+
+  .schedule-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .schedule-panel input[type="datetime-local"] {
+    width: 100%;
   }
 
   .article {

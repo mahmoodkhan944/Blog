@@ -340,8 +340,13 @@
     align-items: flex-start;
   }
 
-  .dashboard-header .btn {
+  .dashboard-header-actions {
     width: 100%;
+  }
+
+  .dashboard-header-actions .btn {
+    flex: 1;
+    text-align: center;
   }
 }
 
@@ -365,5 +370,29 @@
 
   .stats-bar-label {
     font-size: 12px;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .image-check-row {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .image-check-row a {
+    width: 100%;
+    text-align: center;
   }
 }

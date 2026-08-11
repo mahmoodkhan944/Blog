@@ -93,6 +93,21 @@ function absoluteUrl(req, maybeRelativePath) {
   return maybeRelativePath.startsWith("/") ? `${base}${maybeRelativePath}` : maybeRelativePath;
 }
 
+// ===== STRUCTURED DATA (JSON-LD) =====
+// Helps search engines understand the page (author, publish date,
+// image) well enough to show richer results — separate from, and in
+// addition to, the Open Graph tags above.
+function injectJsonLd(html, data) {
+  const script = `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+  return html.replace("</head>", `${script}\n</head>`);
+}
+
+function toIsoDate(displayDate) {
+  if (!displayDate) return undefined;
+  const parsed = new Date(displayDate);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
 // ===== SITEMAP / ROBOTS =====
 // Lists every published blog's id via Firestore's REST API (same
 // no-credentials-needed approach as fetchBlogDoc above), for search
@@ -129,11 +144,19 @@ app.get("/", (req, res) => {
     const html = fs.readFileSync(path.join(__dirname, "public/home.html"), "utf-8");
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-    const injected = injectMetaTags(html, {
+    let injected = injectMetaTags(html, {
       title: "Blog — Real stories, written by people",
       description: "Real stories and ideas, written by people — not algorithms.",
       image: `${baseUrl}/img/header.png`,
       url: baseUrl
+    });
+
+    injected = injectJsonLd(injected, {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Blog",
+      url: baseUrl,
+      description: "Real stories and ideas, written by people — not algorithms."
     });
 
     res.send(injected);
@@ -193,13 +216,31 @@ app.get("/:id", async (req, res) => {
     }
 
     const html = fs.readFileSync(path.join(__dirname, "public/blog.html"), "utf-8");
+    const pageUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    const bannerUrl = absoluteUrl(req, data.bannerImage);
+    const description = stripHtmlTags(data.article).slice(0, 160);
 
-    const injected = injectMetaTags(html, {
+    let injected = injectMetaTags(html, {
       title: data.title ? `Blog : ${data.title}` : "Blog",
-      description: stripHtmlTags(data.article).slice(0, 160),
-      image: absoluteUrl(req, data.bannerImage),
-      url: `${req.protocol}://${req.get("host")}${req.originalUrl}`
+      description,
+      image: bannerUrl,
+      url: pageUrl
     });
+
+    // Only expose non-draft posts to search engines — a draft's JSON-LD
+    // shouldn't get indexed even if the page itself is reachable.
+    if (data.status !== "draft") {
+      injected = injectJsonLd(injected, {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: data.title,
+        image: [bannerUrl],
+        description,
+        datePublished: toIsoDate(data.publishedAt),
+        author: data.authorName ? { "@type": "Person", name: data.authorName } : undefined,
+        mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl }
+      });
+    }
 
     res.send(injected);
   } catch (err) {

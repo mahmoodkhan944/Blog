@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         allDocs = sortDocsByRecency(snapshot.docs);
         const totalPages = Math.max(1, Math.ceil(allDocs.length / PAGE_SIZE));
         if (currentPage > totalPages) currentPage = totalPages;
+        renderStats();
         renderPage();
       },
       err => {
@@ -39,6 +40,61 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   });
 });
+
+function renderStats() {
+  const panel = document.querySelector("#statsPanel");
+  if (!panel) return;
+
+  if (allDocs.length === 0) {
+    panel.innerHTML = "";
+    return;
+  }
+
+  const published = allDocs.filter(doc => doc.data().status !== "draft");
+  const totalViews = published.reduce((sum, doc) => sum + (doc.data().views || 0), 0);
+  const totalLikes = published.reduce((sum, doc) => sum + (doc.data().likes || 0), 0);
+
+  const topPosts = [...published]
+    .sort((a, b) => (b.data().views || 0) - (a.data().views || 0))
+    .slice(0, 5);
+  const maxViews = Math.max(1, ...topPosts.map(doc => doc.data().views || 0));
+
+  panel.innerHTML = `
+    <div class="stats-cards">
+      <div class="stat-card">
+        <span class="stat-value">${published.length}</span>
+        <span class="stat-label">Published posts</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${totalViews}</span>
+        <span class="stat-label">Total views</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">${totalLikes}</span>
+        <span class="stat-label">Total likes</span>
+      </div>
+    </div>
+    ${topPosts.length ? `
+      <div class="stats-chart">
+        <h3>Top posts by views</h3>
+        ${topPosts.map(doc => {
+          const d = doc.data();
+          const views = d.views || 0;
+          const pct = Math.max(4, Math.round((views / maxViews) * 100));
+          return `
+            <div class="stats-bar-row">
+              <span class="stats-bar-label" title="${escapeHtml(d.title)}">${escapeHtml(d.title)}</span>
+              <div class="stats-bar-track">
+                <div class="stats-bar-fill" style="width:${pct}%"></div>
+              </div>
+              <span class="stats-bar-value">${views}</span>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    ` : ""}
+  `;
+}
 
 function renderPage() {
   if (allDocs.length === 0) {

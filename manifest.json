@@ -1,0 +1,18 @@
+{
+  "name": "Blog — Real stories, written by people",
+  "short_name": "Blog",
+  "description": "Real stories and ideas, written by people — not algorithms.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#D96C4A",
+  "icons": [
+    {
+      "src": "/public/img/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

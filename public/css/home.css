@@ -311,6 +311,66 @@
   padding: 0 5vw var(--space-9);
 }
 
+/* ===== Newsletter signup ===== */
+.newsletter-strip {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 5vw var(--space-9);
+}
+
+.newsletter-content {
+  background: var(--bg-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.newsletter-content h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.newsletter-content p {
+  color: var(--ink-soft);
+  max-width: 380px;
+}
+
+.newsletter-form {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.newsletter-form input {
+  padding: 12px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-alt);
+  color: var(--ink);
+  min-width: 220px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+.newsletter-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.newsletter-success {
+  color: var(--success);
+  font-weight: 600;
+}
+
 /* Used on pages without a hero header (e.g. /blogs), so the heading
    sits right below the fixed navbar instead of assuming hero spacing. */
 .section-heading.no-hero {
@@ -471,6 +531,19 @@
   .invite-content > .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .newsletter-content {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .newsletter-form {
+    width: 100%;
+  }
+
+  .newsletter-form input {
+    flex: 1;
+    min-width: 0;
   }
 }
 

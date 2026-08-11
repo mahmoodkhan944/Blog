@@ -360,12 +360,7 @@ async function submitComment(e) {
   submitBtn.disabled = true;
 
   try {
-    await db.collection("blogs").doc(blogId).collection("comments").add({
-      text,
-      authorId: auth.currentUser.uid,
-      authorName: auth.currentUser.displayName || auth.currentUser.email.split("@")[0],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    await postComment(text, null);
     textEl.value = "";
   } catch (err) {
     console.error(err);
@@ -374,6 +369,68 @@ async function submitComment(e) {
     submitBtn.disabled = false;
   }
 }
+
+function postComment(text, parentId) {
+  const payload = {
+    text,
+    authorId: auth.currentUser.uid,
+    authorName: auth.currentUser.displayName || auth.currentUser.email.split("@")[0],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (parentId) payload.parentId = parentId;
+
+  return db.collection("blogs").doc(blogId).collection("comments").add(payload);
+}
+
+// ===== REPLIES =====
+// One level of nesting only (a reply can't itself be replied to) —
+// keeps the thread readable instead of turning into an indent staircase.
+function showReplyForm(commentId) {
+  const wrap = document.getElementById(`replyForm-${commentId}`);
+  if (!wrap) return;
+
+  if (!auth.currentUser) {
+    wrap.innerHTML = `<p class="comment-login-prompt">Please <a href="/login">log in</a> to reply.</p>`;
+    wrap.style.display = "block";
+    return;
+  }
+
+  wrap.style.display = wrap.style.display === "block" ? "none" : "block";
+  if (wrap.style.display !== "block") return;
+
+  wrap.innerHTML = `
+    <form class="comment-form reply-form" onsubmit="submitReply(event, '${commentId}')">
+      <textarea placeholder="Write a reply..." maxlength="2000" required></textarea>
+      <button type="submit" class="btn accent small">Reply</button>
+    </form>
+  `;
+  wrap.querySelector("textarea").focus();
+}
+
+async function submitReply(e, parentId) {
+  e.preventDefault();
+
+  const form = e.target;
+  const textarea = form.querySelector("textarea");
+  const btn = form.querySelector("button");
+  const text = textarea.value.trim();
+  if (!text) return;
+
+  btn.disabled = true;
+
+  try {
+    await postComment(text, parentId);
+    document.getElementById(`replyForm-${parentId}`).style.display = "none";
+  } catch (err) {
+    console.error(err);
+    alert("Could not post reply. Please try again.");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+window.showReplyForm = showReplyForm;
+window.submitReply = submitReply;
 
 function renderComments(snapshot) {
   const countEl = document.getElementById("commentCount");
@@ -390,23 +447,42 @@ function renderComments(snapshot) {
   const currentUid = auth.currentUser?.uid;
   const admin = typeof isAdmin === "function" && isAdmin(auth.currentUser);
 
-  list.innerHTML = snapshot.docs.map(doc => {
-    const c = doc.data();
+  const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const topLevel = all.filter(c => !c.parentId);
+  const repliesByParent = {};
+  all.filter(c => c.parentId).forEach(c => {
+    (repliesByParent[c.parentId] = repliesByParent[c.parentId] || []).push(c);
+  });
+  // Replies read most naturally oldest-first within a thread.
+  Object.values(repliesByParent).forEach(list => list.sort((a, b) => getSortTime(a) - getSortTime(b)));
+
+  function commentHTML(c, isReply) {
     const canDelete = currentUid && (c.authorId === currentUid || admin);
     const when = c.createdAt?.toDate ? formatCommentDate(c.createdAt.toDate()) : "just now";
 
     return `
-      <div class="comment-item">
+      <div class="comment-item ${isReply ? "comment-reply" : ""}">
         <div class="comment-head">
           <span class="comment-author">${escapeHtml(c.authorName || "Anonymous")}</span>
           <span class="comment-date">${when}</span>
         </div>
         <p class="comment-text">${escapeHtml(c.text)}</p>
-        ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${doc.id}')">Delete</button>` : ""}
+        <div class="comment-actions">
+          ${!isReply ? `<button class="comment-reply-btn" onclick="showReplyForm('${c.id}')">Reply</button>` : ""}
+          ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${c.id}')">Delete</button>` : ""}
+        </div>
+        ${!isReply ? `<div class="reply-form-wrap" id="replyForm-${c.id}" style="display:none"></div>` : ""}
       </div>
     `;
+  }
+
+  list.innerHTML = topLevel.map(c => {
+    const replies = (repliesByParent[c.id] || []).map(r => commentHTML(r, true)).join("");
+    return commentHTML(c, false) + (replies ? `<div class="comment-replies">${replies}</div>` : "");
   }).join("");
 }
+
+// getSortTime lives in blog-cards.js — reused here for reply ordering.
 
 async function deleteComment(commentId) {
   if (!confirm("Delete this comment?")) return;

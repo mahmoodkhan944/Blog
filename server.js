@@ -6,7 +6,7 @@ const admin = require("firebase-admin");
 
 const app = express();
 
-
+// Must match firebaseConfig.projectId in public/js/firebase.js.
 const FIREBASE_PROJECT_ID = "blogging-website-12a92";
 
 app.use(express.json());

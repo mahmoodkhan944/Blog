@@ -1,13 +1,17 @@
-const CACHE_NAME = "blog-static-v1";
+// Bumped so browsers ditch any old cache (which held a now-stale copy
+// of base.css) — this is also why cache-first was the wrong strategy
+// for CSS in the first place. See below.
+const CACHE_NAME = "blog-static-v2";
 
-// Deliberately small and conservative — only these exact files are
-// cached. HTML pages, JS, and all Firestore/Firebase calls are NEVER
-// intercepted, so blog content (posts, comments, likes) always stays
-// live and fresh. This just makes repeat visits a little faster and
-// lets the site be "installed" as a PWA.
+// Deliberately small and conservative — ONLY the icon is cached now.
+// CSS used to be listed here too, but that's actively-changing content:
+// with a cache-first strategy, once a browser had base.css cached, it
+// would keep serving that stale copy forever, even after real updates
+// were deployed — exactly the "why isn't my CSS change showing up" bug
+// that came up. HTML pages, JS, and all Firestore/Firebase calls are
+// still never intercepted, so blog content (posts, comments, likes)
+// always stays live and fresh.
 const STATIC_ASSETS = [
-  "/css/variables.css",
-  "/css/base.css",
   "/img/icon.svg"
 ];
 

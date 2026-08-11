@@ -21,7 +21,6 @@ function renderFooter() {
           <a href="/blogs">All blogs</a>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/feed.xml">RSS</a>
         </div>
       </div>
 
